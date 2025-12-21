@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "613921929030",
+    "project_id": "alfardos-app",
+    "storage_bucket": "alfardos-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:613921929030:android:445467bd6c45079982d747",
+        "android_client_info": {
+          "package_name": "af.alfardos.app_alfardos"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "613921929030-ae7a5e4hkhmh2qjl9boteg3d7furi3on.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "af.alfardos.app_alfardos",
+            "certificate_hash": "5c1637d02c3e5fd46815cc574989a773c5f4ee7a"
+          }
+        },
+        {
+          "client_id": "613921929030-bmr3chsrgj09psukndfcr4djj9t8js1n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSvLsaBprx7DYpbdwAijZi7F8loxIKE_U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "613921929030-bmr3chsrgj09psukndfcr4djj9t8js1n.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "613921929030-dd66480jfn23cnj94jno9gvtadr91s1a.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.appAlfardos"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
