@@ -155,6 +155,7 @@ class CustomClientAppBar extends StatelessWidget implements PreferredSizeWidget 
                     SizedBox(width: 30.w),
                   ],
                 ),
+
               ],
             ),
           ),
@@ -174,3 +175,4 @@ void _logout(BuildContext context) async{
         (route) => false,
   );
 }
+

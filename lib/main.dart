@@ -15,6 +15,7 @@ import 'app_alfardos/my_app.dart';
 import 'auth/data/repo/auth_repo_impl.dart';
 import 'auth/perthon/cubit/auth_cubit.dart';
 import 'client/factuors/client_order/perthon/cubit/order_cubit.dart';
+import 'client/factuors/home_screen/perthon/cuibt/client_balance_cubit.dart';
 import 'firebase_options.dart';
 
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -69,6 +70,10 @@ Future<void> main() async {
           create: (_) =>
           SettingCubit(FirebaseFirestore.instance)..listenToOrders(),
         ),
+        BlocProvider(
+          create: (_) => ClientBalanceCubit(),
+        ),
+
       ],
       child: const MyApp(),
     ),

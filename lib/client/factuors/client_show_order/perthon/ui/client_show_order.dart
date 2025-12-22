@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../../core/wedgit/widget_client/instapay_launcher.dart';
 import '../cubit/shwo_revio_order_cubit.dart';
 import '../cubit/shwo_revio_order_state.dart';
 
@@ -30,97 +31,143 @@ class ClientShowOrderPage extends StatelessWidget {
         appBar: const CustomClientAppBar(),
         body: BlocBuilder<ClientOrderCubit, ClientOrderState>(
           builder: (context, state) {
-            if (state is ClientOrderLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            if (state is ClientOrderError) {
-              return Center(child: Text(state.message));
-            }
-
             if (state is ClientOrderLoaded) {
-              return ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: state.orders.length,
-                itemBuilder: (context, index) {
-                  final data = state.orders[index];
-                  final pricing = Map<String, dynamic>.from(
-                    data['client pricing'] ?? {},
-                  );
+              final filteredOrders = state.orders.where((order) {
+                final pricing = order['client pricing'];
+                return pricing != null && pricing is Map && pricing.isNotEmpty;
+              }).toList();
 
-                  final String orderId = data['orderId'];
-                  final String product = data['prodact'] ?? 'بدون اسم';
+              if (filteredOrders.isEmpty) {
+                return const Center(
+                  child: Text(
+                    'لا توجد طلبات جاهزة للعرض',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                );
+              }
 
-                  double total = (pricing['total'] ?? 0).toDouble();
-                  double paid = (pricing['paid'] ?? 0).toDouble();
-                  double remaining = total - paid;
+              return Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: 800,
 
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 16),
+                  ),
+                  child: ListView.builder(
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Color(0xffEAE0CF),
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 6,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          product,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blueAccent,
-                          ),
-                        ),
-                        const Divider(height: 20),
+                    itemCount: filteredOrders.length,
+                    itemBuilder: (context, index) {
+                      final data = filteredOrders[index];
 
-                        _row("ليزر", pricing['laser']),
-                        _row("الخامه", pricing['material']),
-                        _row("ملحوظه", pricing['note']),
-                        _row("الإجمالي", total, isBold: true),
+                      final pricing = Map<String, dynamic>.from(
+                        data['client pricing'] ?? {},
+                      );
 
-                        const SizedBox(height: 12),
+                      final String orderId = data['orderId'];
+                      final String product = data['prodact'] ?? 'بدون اسم';
 
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            ElevatedButton(
-                              child: const Text("ادفع عربون"),
-                              onPressed: () async {
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  builder: (_) => PayDepositSheet(orderId: orderId),
-                                );
-                              },
-                            ),
+                      double paid = (pricing['paid'] ?? 0).toDouble();
+                      double total = (pricing['total'] ?? 0).toDouble();
+                      double remaining = total - paid;
+                      if (remaining < 0) remaining = 0;
 
-
-
-                            Text(
-                              remaining <= 0 ? "خالص" : "الباقي: $remaining",
-                              style: TextStyle(
-                                color: remaining <= 0
-                                    ? Colors.green
-                                    : Colors.redAccent,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xffEAE0CF),
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 6,
+                              offset: Offset(0, 3),
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  );
-                },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              product,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blueAccent,
+                              ),
+                            ),
+                            const Divider(height: 20),
+
+                            _row("ليزر", pricing['laser'] ?? 0),
+                            _row("الخامه", pricing['material'] ?? 0),
+                            _row("ملحوظه", pricing['note'] ?? ''),
+                            _row("الاجمالي", pricing['total'] ?? 0),
+
+                            const SizedBox(height: 12),
+
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    await openInstaPay();
+
+                                    showModalBottomSheet(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      builder: (sheetContext) {
+                                        return BlocProvider.value(
+                                          value: context.read<ClientOrderCubit>(),
+                                          child: PayDepositSheet(
+                                            orderId: orderId,
+                                            orderName: product,
+                                            total: total,
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xffE9762B),
+                                    elevation: 6,
+                                    shadowColor: Colors.black45,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 16.w,
+                                      vertical: 8.h,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14.r),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.payments_rounded,
+                                        color: Colors.lightGreen,
+                                        size: 26.sp,
+                                      ),
+                                      SizedBox(width: 8.w),
+                                      Text(
+                                        "ادفع عربون",
+                                        style: TextStyle(
+                                          color: const Color(0xff41644A),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 20.sp,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                buildPaymentStatus(pricing: pricing),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
               );
             }
 
@@ -137,7 +184,13 @@ class ClientShowOrderPage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title),
+          Text(
+            "$title :",
+            style: TextStyle(
+              fontWeight: isBold ? FontWeight.bold : FontWeight.w400,
+              fontSize: 20.sp,
+            ),
+          ),
           Text(
             "$value",
             style: TextStyle(
@@ -150,9 +203,18 @@ class ClientShowOrderPage extends StatelessWidget {
     );
   }
 }
+
 class PayDepositSheet extends StatefulWidget {
   final String orderId;
-  const PayDepositSheet({required this.orderId});
+  final String orderName;
+  final double total;
+
+  const PayDepositSheet({
+    super.key,
+    required this.orderId,
+    required this.orderName,
+    required this.total,
+  });
 
   @override
   State<PayDepositSheet> createState() => _PayDepositSheetState();
@@ -182,8 +244,9 @@ class _PayDepositSheetState extends State<PayDepositSheet> {
           const SizedBox(height: 10),
           ElevatedButton(
             onPressed: () async {
-              final picked =
-              await ImagePicker().pickImage(source: ImageSource.gallery);
+              final picked = await ImagePicker().pickImage(
+                source: ImageSource.gallery,
+              );
               if (picked != null) {
                 setState(() => image = File(picked.path));
               }
@@ -195,9 +258,11 @@ class _PayDepositSheetState extends State<PayDepositSheet> {
             onPressed: image == null
                 ? null
                 : () {
-              context.read<ClientOrderCubit>().payDeposit(
+              context.read<ClientOrderCubit>().confirmPayment(
                 orderId: widget.orderId,
-                amount: double.parse(amountCtrl.text),
+                orderName: widget.orderName,
+                total: widget.total,
+                deposit: double.parse(amountCtrl.text),
                 receiptImage: image!,
               );
               Navigator.pop(context);
@@ -208,4 +273,42 @@ class _PayDepositSheetState extends State<PayDepositSheet> {
       ),
     );
   }
+}
+
+Widget buildPaymentStatus({required Map<String, dynamic> pricing}) {
+  final double total = (pricing['total'] ?? 0).toDouble();
+  final double paid = (pricing['paid'] ?? 0).toDouble();
+
+  if (paid <= 0) {
+    return Text(
+      " باقي : $total",
+      style: const TextStyle(
+        color: Colors.red,
+        fontWeight: FontWeight.bold,
+        fontSize: 20,
+      ),
+    );
+  }
+
+  final double remaining = total - paid;
+
+  if (paid >= total && total > 0) {
+    return const Text(
+      "خالص",
+      style: TextStyle(
+        color: Colors.green,
+        fontWeight: FontWeight.bold,
+        fontSize: 20,
+      ),
+    );
+  }
+
+  return Text(
+    "الباقي: $remaining",
+    style: const TextStyle(
+      color: Colors.redAccent,
+      fontWeight: FontWeight.bold,
+      fontSize: 20,
+    ),
+  );
 }

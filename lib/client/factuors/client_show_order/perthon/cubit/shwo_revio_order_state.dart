@@ -13,7 +13,6 @@ class ClientOrderLoading extends ClientOrderState {}
 
 class ClientOrderLoaded extends ClientOrderState {
   final List<Map<String, dynamic>> orders;
-
   ClientOrderLoaded(this.orders);
 
   @override
@@ -22,7 +21,6 @@ class ClientOrderLoaded extends ClientOrderState {
 
 class ClientOrderError extends ClientOrderState {
   final String message;
-
   ClientOrderError(this.message);
 
   @override

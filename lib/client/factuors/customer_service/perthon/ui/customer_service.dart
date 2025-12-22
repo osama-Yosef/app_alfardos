@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import '../../../../../core/wedgit/widget_client/clint_chat.dart';
 import '../../../../../core/wedgit/widget_client/custom_client_app_bar.dart';
 
@@ -31,7 +32,10 @@ class _ClientServicePageState extends State<ClientServicePage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => ClientChatPage(orderId: doc.id, userId: userId),
+          builder: (_) => ClientChatPage(
+            orderId: doc.id,
+            userId: userId,
+          ),
         ),
       );
     } else {
@@ -65,89 +69,142 @@ class _ClientServicePageState extends State<ClientServicePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomClientAppBar(),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Text(
-              "خدمه العملاء",
-              style: TextStyle(
-                fontSize: 35.sp,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            SizedBox(height: 35.h),
-
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(20.w),
-              decoration: BoxDecoration(
-                color: Colors.blueGrey,
-                borderRadius: BorderRadius.circular(16.r),
-              ),
+      appBar: const CustomClientAppBar(),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: 20.w,
+            vertical: 20.h,
+          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 800.w,maxHeight: 1000.h),
               child: Column(
                 children: [
-                  Icon(
-                    Icons.support_agent,
-                    size: 48.sp,
-                    color: Colors.deepPurple,
-                  ),
-                  SizedBox(height: 12.h),
                   Text(
-                    'الدعم عبر المحادثة',
+                    "خدمه العملاء",
                     style: TextStyle(
-                      fontSize: 20.sp,
+                      fontSize: 30.sp,
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 16.h),
-                  SizedBox(
+
+                  SizedBox(height: 30.h),
+
+                  Container(
                     width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () => openChat(context),
-                      icon: const Icon(Icons.chat),
-                      label:  Text(
-                        'ابدأ المحادثة',
-                        style: TextStyle(
-                          color: Colors.black87,
-                          fontSize: 20.sp,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 20.w,
+                      vertical: 24.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.blueGrey,
+                      borderRadius: BorderRadius.circular(16.r),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.support_agent,
+                          size: 46.sp,
+                          color: Colors.deepPurple,
                         ),
-                      ),
+
+                        SizedBox(height: 12.h),
+
+                        Text(
+                          'الدعم عبر المحادثة',
+                          style: TextStyle(
+                            fontSize: 20.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+
+                        SizedBox(height: 50.h),
+
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () => openChat(context),
+                            icon: Icon(
+                              Icons.chat_bubble_rounded,
+                              color: Colors.white,
+                              size: 22.sp,
+                            ),
+                            label: Text(
+                              'ابدأ المحادثة',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20.sp,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.6,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xff4CAF50),
+                              elevation: 6,
+                              shadowColor: Colors.black45,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 20.w,
+                                vertical: 14.h,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16.r),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: 80.h),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _contactBtn(
+                              FontAwesomeIcons.whatsapp,
+                              Colors.green,
+                              _launchWhatsApp,
+                            ),
+                            _contactBtn(
+                              Icons.phone,
+                              Colors.blue,
+                              _launchCall,
+                            ),
+                            _contactBtn(
+                              Icons.email,
+                              Colors.red,
+                              _launchEmail,
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-
-            SizedBox(height: 200.h),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _contactBtn(
-                  FontAwesomeIcons.whatsapp,
-                  Colors.green,
-                  _launchWhatsApp,
-                ),
-                _contactBtn(Icons.phone, Colors.blue, _launchCall),
-                _contactBtn(Icons.email, Colors.red, _launchEmail),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _contactBtn(IconData icon, Color color, VoidCallback onTap) {
+  Widget _contactBtn(
+      IconData icon,
+      Color color,
+      VoidCallback onTap,
+      ) {
     return InkWell(
+      borderRadius: BorderRadius.circular(50.r),
       onTap: onTap,
       child: CircleAvatar(
-        radius: 28.r,
+        radius: 26.r,
         backgroundColor: color,
-        child: Icon(icon, color: Colors.white),
+        child: Icon(
+          icon,
+          color: Colors.white,
+          size: 22.sp,
+        ),
       ),
     );
   }
