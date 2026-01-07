@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 
 import '../../admin/factuors/customer_requests/perthon/ui/customer_requests.dart';
 import '../../admin/factuors/eng_screen/perthon/ui/eng_screen.dart';
+import '../../admin/factuors/factor/perthon/ui/factor.dart';
 import '../../admin/factuors/home_screen/perthon/ui/home_screen.dart';
 import '../../admin/factuors/live_production_follow_up/perthon/ui/live_production_follow_up.dart';
 import '../../admin/factuors/servis/perthon/ui/admin_chats_page.dart';
@@ -55,6 +56,8 @@ class AppRouter {
       case Routes.EngScreen:
         return MaterialPageRoute(builder: (context) => EngScreen());
       case Routes.AdminChatsPage:
+        return MaterialPageRoute(builder: (context) => FactorPage());
+      case Routes.Factor:
         return MaterialPageRoute(builder: (context) => AdminChatsPage());
       default:
         return MaterialPageRoute(builder: (context) => SizedBox());

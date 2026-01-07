@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../../core/routing/routes.dart';
 import '../../../../../core/wedgit/Widgit_admin/calculator.dart';
 import '../../../../../core/wedgit/Widgit_admin/custom_app_bar.dart';
+import '../../../../../core/wedgit/Widgit_admin/pricing_review_button.dart';
 import '../../../../../core/wedgit/wedgit_app/custom_text_form.dart';
 import '../../data/model/model_prise.dart';
 import '../cubit/pricing_cubit.dart';
@@ -18,35 +19,109 @@ class Setting extends StatefulWidget {
   State<Setting> createState() => _SettingState();
 }
 
-class _SettingState extends State<Setting> {
+class _SettingState extends State<Setting> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _slideAnimation;
+
+  bool showPricingReviewButton = false;
+
   @override
   void initState() {
     super.initState();
+
     context.read<SettingCubit>().listenToOrders();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, -1),
+      end: const Offset(0, 0),
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomAppBar(),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isDesktop = constraints.maxWidth >= 900;
+        body: BlocListener<SettingCubit, SettingState>(
+          listener: (context, state) {
+            if (state is ConfirmOrderSuccess) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('✅ تم تحويل الأوردر للتنفيذ'),
+                ),
+              );
+            }
+
+            if (state is ConfirmOrderFailure) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.error),
+                ),
+              );
+            }
+          },
+          child: LayoutBuilder(
+
+          builder: (context, constraints) {
+          final isDesktop = constraints.maxWidth >= 900.w;
 
           return Scrollbar(
             thumbVisibility: isDesktop,
             child: Center(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxWidth: isDesktop ? 1100 : double.infinity,
+                  maxWidth: isDesktop ? 1100.w : double.infinity,
                 ),
                 child: Padding(
-                  padding: EdgeInsets.all(isDesktop ? 24 : 15),
+                  padding: EdgeInsets.all(isDesktop ? 24.w : 15.w),
                   child: SingleChildScrollView(
                     child: Column(
                       children: [
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: IconButton(
+                            icon: Icon(
+                              showPricingReviewButton
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
+                              color: Colors.white,
+                              size: 34,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                showPricingReviewButton =
+                                    !showPricingReviewButton;
+
+                                showPricingReviewButton
+                                    ? _controller.forward()
+                                    : _controller.reverse();
+                              });
+                            },
+                          ),
+                        ),
+
+                        SlideTransition(
+                          position: _slideAnimation,
+                          child: showPricingReviewButton
+                              ? Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                                  child: const PricingReviewButton(),
+                                )
+                              : const SizedBox(),
+                        ),
+
                         Row(
-                          spacing: 5,
+                          spacing: 5.w,
                           children: [
                             Expanded(
                               child: _weightCalculatorButton(
@@ -74,18 +149,20 @@ class _SettingState extends State<Setting> {
                                     );
                                   },
                                   child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    spacing: 5,
+                                    spacing: 5.w,
                                     children: [
-                                      Center(
+                                      Flexible(
                                         child: Text(
                                           "صفحه المهندسين",
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
-                                            fontSize: isDesktop ? 20 : 24,
+                                            fontSize: isDesktop ? 20.w : 24.w,
                                             color: Colors.white,
                                           ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                       Icon(
@@ -104,14 +181,6 @@ class _SettingState extends State<Setting> {
                         SizedBox(height: 20.h),
                         BlocBuilder<SettingCubit, SettingState>(
                           builder: (context, state) {
-                            if (state is SettingLoading) {
-                              return const CircularProgressIndicator();
-                            }
-
-                            if (state is SettingError) {
-                              return Text("خطأ: ${state.message}");
-                            }
-
                             if (state is SettingLoaded) {
                               if (state.orders.isEmpty) {
                                 return const Text("لا توجد طلبات");
@@ -143,142 +212,159 @@ class _SettingState extends State<Setting> {
           );
         },
       ),
+        )
     );
   }
 
-  // ================= CARD =================
   Widget _orderCard(BuildContext context, PricingModel order, bool isDesktop) {
-    return Card(
-      color: const Color(0xffEAE0CF),
-      elevation: isDesktop ? 6 : 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: EdgeInsets.all(isDesktop ? 20 : 12.sp),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "تاريخ الطلب: ${_formatDate(order.createdAt)}",
-              style: TextStyle(
-                fontSize: isDesktop ? 16 : 18.sp,
-                fontWeight: FontWeight.w500,
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          showPricingReviewButton = true;
+          _controller.forward();
+        });
+      },
+      child: Card(
+        color: const Color(0xffEAE0CF),
+        elevation: isDesktop ? 6 : 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: EdgeInsets.all(isDesktop ? 20 : 12.sp),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "تاريخ الطلب: ${_formatDate(order.createdAt)}",
+                style: TextStyle(
+                  fontSize: isDesktop ? 16 : 18.sp,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-            SizedBox(height: 6),
-            Text(
-              "اسم العميل: ${order.clientName}",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: isDesktop ? 22 : 25,
-                color: const Color(0xff213448),
+              SizedBox(height: 6),
+              Text(
+                "اسم العميل: ${order.clientName}",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: isDesktop ? 22 : 25,
+                  color: const Color(0xff213448),
+                ),
               ),
-            ),
-            Text(
-              "رقم العميل: ${order.clientPhone}",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: isDesktop ? 18 : 20,
-                color: const Color(0xff213448),
+              Text(
+                "رقم العميل: ${order.clientPhone}",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: isDesktop ? 18 : 20,
+                  color: const Color(0xff213448),
+                ),
               ),
-            ),
-            const Divider(),
-            if (order.engFiles.isNotEmpty) ...[
-              const Text(
-                "ملفات المهندس:",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              ...order.engFiles.map((file) => _fileItem(context, file)),
-            ],
-            if (order.engImages.isNotEmpty) ...[
-              SizedBox(height: 10),
-              SizedBox(
-                height: isDesktop ? 180 : 120.h,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: order.engImages.length,
-                  itemBuilder: (_, i) => Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: InkWell(
-                      onTap: () {
-                        showDialog(
-                          context: context,
-                          builder: (_) => Dialog(
-                            backgroundColor: Colors.black,
-                            child: InteractiveViewer(
-                              child: Image.network(order.engImages[i]),
+              const Divider(),
+              if (order.engFiles.isNotEmpty) ...[
+                const Text(
+                  "ملفات المهندس:",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                ...order.engFiles.map((file) => _fileItem(context, file)),
+              ],
+              if (order.engImages.isNotEmpty) ...[
+                SizedBox(height: 10),
+                SizedBox(
+                  height: isDesktop ? 180 : 120.h,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: order.engImages.length,
+                    itemBuilder: (_, i) => Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: InkWell(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (_) => Dialog(
+                              backgroundColor: Colors.black,
+                              child: InteractiveViewer(
+                                child: Image.network(order.engImages[i]),
+                              ),
                             ),
+                          );
+                        },
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            order.engImages[i],
+                            width: isDesktop ? 300 : 260.w,
+                            fit: BoxFit.cover,
                           ),
-                        );
-                      },
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          order.engImages[i],
-                          width: isDesktop ? 300 : 260.w,
-                          fit: BoxFit.cover,
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
-            SizedBox(height: 10),
-            Text(
-              "ملاحظة المهندس: ${order.engNote}",
-              style: TextStyle(
-                fontSize: isDesktop ? 16 : 18.sp,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xff213448),
-              ),
-            ),
-            SizedBox(height: 20),
-            Row(
-              children: [
-                ElevatedButton(
-                  onPressed: () => _openPricingDialog(context, order.orderId),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isDesktop ? 40 : 24.w,
-                      vertical: 14,
-                    ),
-                  ),
-                  child: const Text(
-                    "تسعير العميل",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+              ],
+              SizedBox(height: 10),
+              Text(
+                "ملاحظة المهندس: ${order.engNote}",
+                style: TextStyle(
+                  fontSize: isDesktop ? 16 : 18.sp,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xff213448),
                 ),
-                const SizedBox(width: 12),
-                SizedBox(
-                  width: isDesktop ? 200 : null,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      context.read<SettingCubit>().confirmOrderForExecution(
-                        orderId: order.orderId,
-                      );
-                    },
+              ),
+              SizedBox(height: 20),
+              Row(
+                children: [
+                  ElevatedButton(
+                    onPressed: () => _openPricingDialog(context, order.orderId),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
+                      backgroundColor: Colors.green,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isDesktop ? 40 : 24.w,
+                        vertical: 14,
+                      ),
                     ),
                     child: const Text(
-                      "للتنفيذ",
+                      "تسعير العميل",
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 25,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: isDesktop ? 200 : null,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        await context
+                            .read<SettingCubit>()
+                            .confirmOrderForExecution(orderId: order.orderId);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("✅ تم تحويل الأوردر للتنفيذ"),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                      ),
+                      child: const Text(
+                        "للتنفيذ",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 25,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

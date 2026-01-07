@@ -15,6 +15,7 @@ class Routes{
   static const String verifyEmailScreen = "/verifyEmailScreen";
   static const String EngScreen = "/EngScreen";
   static const String AdminChatsPage = "/AdminChatsPage";
+  static const String Factor = "/Factor";
 
 
 }

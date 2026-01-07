@@ -1,5 +1,4 @@
 import 'package:meta/meta.dart';
-
 import '../../data/model/model_prise.dart';
 
 @immutable
@@ -17,4 +16,16 @@ class SettingLoaded extends SettingState {
 class SettingError extends SettingState {
   final String message;
   SettingError(this.message);
+}
+
+/// ===============================
+/// حالات تأكيد تنفيذ الأوردر
+/// ===============================
+class ConfirmOrderLoading extends SettingState {}
+
+class ConfirmOrderSuccess extends SettingState {}
+
+class ConfirmOrderFailure extends SettingState {
+  final String error;
+  ConfirmOrderFailure(this.error);
 }

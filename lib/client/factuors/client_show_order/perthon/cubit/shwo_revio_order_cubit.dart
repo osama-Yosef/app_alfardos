@@ -28,6 +28,7 @@ class ClientOrderCubit extends Cubit<ClientOrderState> {
     firestore
         .collection('orders')
         .where('userId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true)
         .snapshots()
         .listen((snapshot) {
       orders = snapshot.docs.map((doc) {

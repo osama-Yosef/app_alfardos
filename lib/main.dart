@@ -10,6 +10,7 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'admin/factuors/eng_screen/perthon/cubit/eng_cubit.dart';
+import 'admin/factuors/factor/perthon/cuibt/factor_cubit.dart';
 import 'admin/factuors/setting/perthon/cubit/pricing_cubit.dart';
 import 'app_alfardos/my_app.dart';
 import 'auth/data/repo/auth_repo_impl.dart';
@@ -18,6 +19,7 @@ import 'client/factuors/client_order/perthon/cubit/order_cubit.dart';
 import 'client/factuors/home_screen/perthon/cuibt/client_balance_cubit.dart';
 import 'firebase_options.dart';
 
+/// ================= FCM Background =================
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -44,36 +46,47 @@ Future<void> main() async {
     sound: true,
   );
 
-
   if (!Platform.isWindows) {
     await FirebaseAppCheck.instance.activate(
       androidProvider: AndroidProvider.playIntegrity,
       appleProvider: AppleProvider.appAttest,
     );
   } else {
-    print(" Firebase App Check disabled on Windows");
+    debugPrint("Firebase App Check disabled on Windows");
   }
 
   runApp(
     MultiBlocProvider(
       providers: [
+        /// AUTH
         BlocProvider<AuthCubit>(
           create: (_) => AuthCubit(AuthRepoImpl()),
         ),
+
+        /// CLIENT
         BlocProvider<OrderCubit>(
           create: (_) => OrderCubit(),
         ),
-        BlocProvider<EngOrderCubit>(
-          create: (_) => EngOrderCubit(),
-        ),
-        BlocProvider<SettingCubit>(
-          create: (_) =>
-          SettingCubit(FirebaseFirestore.instance)..listenToOrders(),
-        ),
-        BlocProvider(
+        BlocProvider<ClientBalanceCubit>(
           create: (_) => ClientBalanceCubit(),
         ),
 
+        /// ENGINEER
+        BlocProvider<EngOrderCubit>(
+          create: (_) => EngOrderCubit(),
+        ),
+
+        /// ADMIN - SETTING
+        BlocProvider<SettingCubit>(
+          create: (_) =>
+              SettingCubit(FirebaseFirestore.instance),
+        ),
+
+        /// FACTOR (التنفيذ)
+        BlocProvider<ImplementCubit>(
+          create: (_) =>
+              ImplementCubit(FirebaseFirestore.instance),
+        ),
       ],
       child: const MyApp(),
     ),

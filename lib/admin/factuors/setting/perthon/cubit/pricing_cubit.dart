@@ -18,55 +18,71 @@ class SettingCubit extends Cubit<SettingState> {
         .collection('orders')
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .listen(
+        .listen((snapshot) {
+          final orders = snapshot.docs.map((doc) {
+            final order = OrderModel.fromFirestore(doc.data(), doc.id);
 
-    (snapshot) {
-        final orders = snapshot.docs.map((doc) {
-          final order =
-          OrderModel.fromFirestore(doc.data(), doc.id);
+            final engReview =
+                doc.data()['eng review price'] as Map<String, dynamic>?;
 
-          final engReview =
-          doc.data()['eng review price']
-          as Map<String, dynamic>?;
+            return PricingModel.fromOrder(order, engReview);
+          }).toList();
 
-          return PricingModel.fromOrder(order, engReview);
-        }).toList();
-
-        emit(SettingLoaded(orders: orders));
-      },
-      onError: (e) => emit(SettingError(e.toString())),
-    );
+          emit(SettingLoaded(orders: orders));
+        }, onError: (e) => emit(SettingError(e.toString())));
   }
 
   // ===============================
   // تأكيد تنفيذ الأوردر
   // ===============================
-  Future<void> confirmOrderForExecution({
-    required String orderId,
-  }) async {
+  Future<void> confirmOrderForExecution({required String orderId}) async {
     try {
-      /// 1️⃣ رسالة للمهندسين
-      await firestore.collection('engineer_messages').add({
+      /// 1️⃣ جلب الأوردر
+      final orderRef = firestore.collection('orders').doc(orderId);
+      final orderDoc = await orderRef.get();
+
+      if (!orderDoc.exists) {
+        throw Exception("Order not found");
+      }
+
+      final orderData = orderDoc.data()!;
+      final engReviewPrice = orderData['eng review price'];
+
+      if (engReviewPrice == null) {
+        throw Exception("eng review price not found");
+      }
+
+      /// 2️⃣ إنشاء أوردر في كوليكشن التنفيذ
+      await firestore.collection('to_implement').add({
         'orderId': orderId,
-        'message': '📦 تم تأكيد الأوردر من العميل وجاهز للتنفيذ',
-        'type': 'order_confirmed',
+        'clientId': orderData['userId'],
+        'name': orderData['name'],
+        'orderDate': orderData['createdAt'],
+        'eng review price': {
+          'date': engReviewPrice['date'],
+          'engineerId': engReviewPrice['engineerId'],
+          'files': engReviewPrice['files'] ?? [],
+          'images': engReviewPrice['images'] ?? [],
+          'note': engReviewPrice['note'],
+        },
+        'status': 'waiting_execution',
+        'executionDate': FieldValue.serverTimestamp(),
         'createdAt': FieldValue.serverTimestamp(),
-        'seen': false,
       });
 
-      /// 2️⃣ تحديث حالة الأوردر
-      await firestore.collection('orders').doc(orderId).update({
-        'status': 'confirmed',
-        'confirmedAt': FieldValue.serverTimestamp(),
-      });
+      /// 3️⃣ تحديث حالة الأوردر
+      await orderRef.update({'status': 'execution'});
+
+      /// 4️⃣ إعادة تحميل الطلبات بدون كسر الصفحة
+      listenToOrders();
+
+      emit(ConfirmOrderSuccess());
     } catch (e) {
-      debugPrint("confirmOrderForExecution error: $e");
+      emit(ConfirmOrderFailure(e.toString()));
     }
   }
 
 
-
-  /// إنشاء Map جديدة لتسعير العميل
   void addPricingClient({
     required String orderId,
     required double totalPrice,
@@ -81,7 +97,7 @@ class SettingCubit extends Cubit<SettingState> {
         'laser': laserPrice,
         'note': noteClient ?? '',
         'date': DateTime.now().toIso8601String(),
-      }
+      },
     });
   }
 }

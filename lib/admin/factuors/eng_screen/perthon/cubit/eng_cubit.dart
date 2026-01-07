@@ -118,7 +118,7 @@ class EngOrderCubit extends Cubit<EngOrderState> {
         }
       });
 
-      /// 🔥 إرسال نفس البيانات داخل الشات
+      /// إرسال نفس البيانات داخل الشات
       await sendMessageToChat(
         orderId: orderId,
         senderId: FirebaseAuth.instance.currentUser!.uid,

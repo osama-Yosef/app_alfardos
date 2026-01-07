@@ -6,6 +6,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../../../core/routing/routes.dart';
 import '../../../../admin/factuors/eng_screen/perthon/ui/eng_screen.dart';
+import '../../../../admin/factuors/factor/perthon/cuibt/factor_cubit.dart';
+import '../../../../admin/factuors/factor/perthon/ui/factor.dart';
 import '../../../../core/wedgit/wedgit_app/coloers.dart';
 import '../../../../core/wedgit/wedgit_app/custom_bottom.dart';
 import '../../../../core/wedgit/wedgit_app/custom_text_form.dart';
@@ -58,11 +60,25 @@ class _LoginScreenState extends State<LoginScreen> {
           final userData = state.userData;
 
           if (state.role == "admin") {
-            Navigator.pushNamed(context, Routes.homeScreen, arguments: userData);
+            Navigator.pushNamed(
+              context,
+              Routes.homeScreen,
+              arguments: userData,
+            );
           } else if (state.role == "eng") {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => EngScreen()),
+            );
+          } else if (state.role == "Factor") {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BlocProvider.value(
+                  value: context.read<ImplementCubit>(),
+                  child: const FactorPage(),
+                ),
+              ),
             );
           } else {
             Navigator.pushNamed(
@@ -109,8 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       },
 
-
-    child: Scaffold(
+      child: Scaffold(
         backgroundColor: Colors.white,
         body: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -148,10 +163,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   SizedBox(height: 40.h),
 
-                  const Text(
+                  Text(
                     "Login",
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: 24.sp,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -188,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     hintText: "example@email.com",
                     lapText: "Email",
                     validator: (v) =>
-                    v == null || v.isEmpty ? "Email is required" : null,
+                        v == null || v.isEmpty ? "Email is required" : null,
                   ),
 
                   SizedBox(height: 30.h),
