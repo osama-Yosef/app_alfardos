@@ -1,195 +1,99 @@
-import 'package:app_alfardos/core/wedgit/wedgit_app/bottom.dart';
-import 'package:app_alfardos/core/wedgit/wedgit_app/coloers.dart';
-import 'package:app_alfardos/core/wedgit/Widgit_admin/custom_app_bar.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide MaterialState;
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../../core/wedgit/Widgit_admin/material_item.dart';
+import 'package:app_alfardos/core/wedgit/Widgit_admin/custom_app_bar.dart';
+
 import '../../../../../core/wedgit/Widgit_admin/select_matrial.dart';
+import '../../data/model/material_entity _model.dart';
+import '../cubit/material_cubit.dart';
+import '../cubit/material_state.dart';
 
-class LiveProductionFollowUp extends StatefulWidget {
+class LiveProductionFollowUp extends StatelessWidget {
   const LiveProductionFollowUp({super.key});
-
-  @override
-  State<LiveProductionFollowUp> createState() => _LiveProductionFollowUpState();
-}
-
-class _LiveProductionFollowUpState extends State<LiveProductionFollowUp> {
-  List<MaterialItem> materials = [];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10.h, vertical: 15.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "إدارة المخزون",
-                    style: TextStyle(
-                      fontSize: 25.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  Bottom(titel: "إضافة مادة", onTap: () {
-                    showDialog(
-                      context: context,
-                      barrierDismissible: true,
-                      barrierColor: Colors.black.withAlpha(10),
-                      builder: (BuildContext context) {
-                        return SelectMatrial(
-                          onAdd: (item) {
-                            setState(() {
-                              materials.add(item);
-                            });
-                          },
-                        );
-                      },
-                    );
-                  },),
-                ],
-              ),
-              SizedBox(height: 10.h),
-              SizedBox(
-                height: 35.h,
-                width: 250.w,
-                child: TextFormField(
-                  onTapOutside: (o) {
-                    FocusScope.of(context).unfocus();
-                  },
-                  decoration: InputDecoration(
-                    hint: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          "..بحث عن المواد..",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.w200,
-                          ),
-                          textAlign: TextAlign.start,
-                        ),
-
-                        Icon(
-                          Icons.search,
-                          color: Colors.white,
-                        ),
-
-                      ],
-                    ) ,
-                  ),
-                ),
-              ),
-              SizedBox(height: 10.h),
-
-              Container(
-                width: double.infinity,
-                height: 550.h,
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(100),
-                  borderRadius: BorderRadius.circular(15.r),
-                  border: Border.all(color: MyColorsApp.fontColor),
-                ),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Column(
-                    children: [
-
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white24,
-                          borderRadius: BorderRadius.circular(10.r),
-                        ),
-                        child: Row(
-                          children: [
-                            _buildHeaderCell("اسم المادة"),
-                            _buildHeaderCell("الفئة"),
-                            _buildHeaderCell("الوحدة"),
-                            _buildHeaderCell("الحد الأعلى"),
-                            _buildHeaderCell("الحد الأدنى"),
-                            _buildHeaderCell("السعر"),
-                            _buildHeaderCell("اسم المورد"),
-                            _buildHeaderCell("تحكم"),
-                          ],
-                        ),
-                      ),
-                      ...materials.map(
-                            (m) => Row(
-                          children: [
-                            _buildDataCell(m.name),
-                            _buildDataCell(m.category),
-                            _buildDataCell(m.unit),
-                            _buildDataCell(m.maxLimit.toString()),
-                            _buildDataCell(m.minLimit.toString()),
-                            _buildDataCell("${m.price.toStringAsFixed(2)} جنيه"),
-                            _buildDataCell(m.supplier),
-                            _buildActionCell(() {
-                              setState(() {
-                                materials.remove(m);
-                              });
-                            }),
-                          ],
-                        ),),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+      appBar: const CustomAppBar(),
+      body: Padding(
+        padding: EdgeInsets.all(16.w),
+        child: BlocBuilder<MaterialCubit, MaterialState>(
+          builder: (context, state) {
+            if (state is MaterialLoading) return const Center(child: CircularProgressIndicator());
+            if (state is MaterialError) return Center(child: Text("حدث خطأ: ${state.message}"));
+            if (state is MaterialLoaded) {
+              if (state.materials.isEmpty) return _emptyState();
+              return _materialTable(context, state.materials);
+            }
+            return const SizedBox();
+          },
         ),
       ),
-
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (_) => const SelectMaterialDialog(),
+          );
+        },
+        child: const Icon(Icons.add),
+      ),
     );
   }
 
+  Widget _emptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.inventory_2_outlined, size: 80.sp, color: Colors.grey),
+          SizedBox(height: 10.h),
+          Text("لا توجد مواد في المخزون", style: TextStyle(fontSize: 18.sp, color: Colors.grey)),
+        ],
+      ),
+    );
+  }
 
-  Widget _buildHeaderCell(String title) {
-    return Container(
-      width: 120.w,
-      padding: EdgeInsets.all(8),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 20.sp,
-          fontWeight: FontWeight.bold,
-          color: Colors.black,
+  Widget _materialTable(BuildContext context, List<MaterialEntity> materials) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+        child: DataTable(
+          headingRowColor: MaterialStateProperty.all(Colors.grey.shade200),
+          columns: const [
+            DataColumn(label: Text("اسم المادة")),
+            DataColumn(label: Text("الفئة")),
+            DataColumn(label: Text("الوحدة")),
+            DataColumn(label: Text("الحد الأدنى")),
+            DataColumn(label: Text("الحد الأعلى")),
+            DataColumn(label: Text("السعر")),
+            DataColumn(label: Text("المورد")),
+            DataColumn(label: Text("تحكم")),
+          ],
+          rows: materials.map((m) {
+            return DataRow(
+              cells: [
+                DataCell(Text(m.name)),
+                DataCell(Text(m.category)),
+                DataCell(Text(m.unit)),
+                DataCell(Text(m.minLimit.toString())),
+                DataCell(Text(m.maxLimit.toString())),
+                DataCell(Text("${m.price} جنيه")),
+                DataCell(Text(m.supplier)),
+                DataCell(
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () {
+                      context.read<MaterialCubit>().deleteMaterial(m.id);
+                    },
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
         ),
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
-
-
-  Widget _buildDataCell(String data) {
-    return Container(
-      width: 120.w,
-      padding: EdgeInsets.all(8),
-      child: Text(
-        data,
-        style: TextStyle(fontSize: 17.sp, color: Colors.black87),
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
-
-
-  Widget _buildActionCell(VoidCallback onDelete) {
-    return Container(
-      width: 100.w,
-      padding: EdgeInsets.all(8),
-      child: IconButton(
-        icon: Icon(Icons.delete, color: Colors.redAccent),
-        onPressed: onDelete,
       ),
     );
   }

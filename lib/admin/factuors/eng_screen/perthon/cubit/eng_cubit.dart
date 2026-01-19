@@ -5,6 +5,7 @@ import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 
 import '../../../../../client/factuors/client_order/data/model/order_model.dart';
 import '../../data/model/engineer_messages_model.dart';
@@ -39,7 +40,8 @@ class EngOrderCubit extends Cubit<EngOrderState> {
         emit(EngOrderLoaded(orders));
       },
       onError: (e) {
-        emit(EngOrderError(e.toString()));
+        debugPrint("listenToAllOrders error: $e");
+        emit(EngOrderError("حدث خطأ أثناء جلب الطلبات"));
       },
     );
   }
@@ -49,18 +51,21 @@ class EngOrderCubit extends Cubit<EngOrderState> {
   /// ======================
   Future<List<String>> uploadImages(List<File> images, String folder) async {
     List<String> urls = [];
-
     for (final image in images) {
-      final response = await cloudinary.uploadFile(
-        CloudinaryFile.fromFile(
-          image.path,
-          resourceType: CloudinaryResourceType.Image,
-          folder: folder,
-        ),
-      );
-      urls.add(response.secureUrl);
+      try {
+        final response = await cloudinary.uploadFile(
+          CloudinaryFile.fromFile(
+            image.path,
+            resourceType: CloudinaryResourceType.Image,
+            folder: folder,
+          ),
+        );
+        urls.add(response.secureUrl);
+      } catch (e) {
+        debugPrint("uploadImages error for ${image.path}: $e");
+        throw Exception("حدث خطأ أثناء رفع الصور");
+      }
     }
-
     return urls;
   }
 
@@ -69,20 +74,22 @@ class EngOrderCubit extends Cubit<EngOrderState> {
   /// ======================
   Future<List<String>> uploadFiles(List<File> files, String folder) async {
     List<String> urls = [];
-
     for (final file in files) {
-      final response = await cloudinary.uploadFile(
-        CloudinaryFile.fromFile(
-          file.path,
-          resourceType: CloudinaryResourceType.Raw,
-          folder: folder,
-        ),
-      );
-      urls.add(response.secureUrl);
+      try {
+        final response = await cloudinary.uploadFile(
+          CloudinaryFile.fromFile(file.path, resourceType: CloudinaryResourceType.Raw, folder: folder),
+        );
+        urls.add(response.secureUrl);
+      } catch (e) {
+        debugPrint("uploadFiles error for ${file.path}: $e");
+        throw Exception("حدث خطأ أثناء رفع الملفات");
+      }
     }
-
     return urls;
   }
+
+
+
 
   /// ======================
   /// 🧾 Review / Pricing
@@ -206,23 +213,29 @@ class EngOrderCubit extends Cubit<EngOrderState> {
   /// ======================
   /// 👤 Client Pricing
   /// ======================
-  void addPricingClient({
+  Future<void> addPricingClient({
     required String orderId,
     required double totalPrice,
     required double materialPrice,
     required double laserPrice,
     String? noteClient,
-  }) {
-    firestore.collection('orders').doc(orderId).update({
-      'client pricing': {
-        'total': totalPrice,
-        'material': materialPrice,
-        'laser': laserPrice,
-        'note': noteClient ?? '',
-        'date': DateTime.now().toIso8601String(),
-      }
-    });
+  }) async {
+    try {
+      await firestore.collection('orders').doc(orderId).update({
+        'client pricing': {
+          'total': totalPrice,
+          'material': materialPrice,
+          'laser': laserPrice,
+          'note': noteClient ?? '',
+          'date': DateTime.now().toIso8601String(),
+        }
+      });
+    } catch (e) {
+      debugPrint("addPricingClient error: $e");
+      throw Exception("حدث خطأ أثناء إضافة سعر العميل");
+    }
   }
+
 
   /// ======================
   /// 💬 Send Message To Client Chat (FINAL)
@@ -230,32 +243,56 @@ class EngOrderCubit extends Cubit<EngOrderState> {
   Future<void> sendMessageToChat({
     required String orderId,
     required String senderId,
-    required String senderType, // engineer | client
+    required String senderType,
     String? text,
     List<String>? images,
     List<String>? files,
     required String messageType,
   }) async {
-    final chatRef = firestore.collection('chats').doc(orderId);
+    final firestore = FirebaseFirestore.instance;
 
-    /// 🔑 جلب صاحب الأوردر (مهم للـ rules)
-    final orderDoc =
-    await firestore.collection('orders').doc(orderId).get();
+    final orderDoc = await firestore.collection('orders').doc(orderId).get();
     final orderUserId = orderDoc.data()?['userId'];
+    if (orderUserId == null) return;
 
-    await chatRef.set({
-      'orderId': orderId,
-      'userId': orderUserId,
-      'updatedAt': FieldValue.serverTimestamp(),
-      'lastMessage': text?.isNotEmpty == true
-          ? text
-          : images?.isNotEmpty == true
-          ? '📷 صورة'
-          : files?.isNotEmpty == true
-          ? '📎 ملف'
-          : '',
-      'lastMessageType': messageType,
-    }, SetOptions(merge: true));
+    final chatQuery = await firestore
+        .collection('chats')
+        .where('userId', isEqualTo: orderUserId)
+        .limit(1)
+        .get();
+
+    DocumentReference chatRef;
+
+    if (chatQuery.docs.isNotEmpty) {
+      chatRef = chatQuery.docs.first.reference;
+
+      await chatRef.update({
+        'lastMessage': text?.isNotEmpty == true
+            ? text
+            : images?.isNotEmpty == true
+            ? '📷 صورة'
+            : files?.isNotEmpty == true
+            ? '📎 ملف'
+            : '',
+        'lastMessageType': messageType,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } else {
+      chatRef = firestore.collection('chats').doc();
+      await chatRef.set({
+        'orderId': orderId,
+        'userId': orderUserId,
+        'lastMessage': text?.isNotEmpty == true
+            ? text
+            : images?.isNotEmpty == true
+            ? '📷 صورة'
+            : files?.isNotEmpty == true
+            ? '📎 ملف'
+            : '',
+        'lastMessageType': messageType,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
 
     await chatRef.collection('messages').add({
       'senderId': senderId,
@@ -268,9 +305,11 @@ class EngOrderCubit extends Cubit<EngOrderState> {
       'seenBy': {
         'client': senderType == 'client',
         'engineer': senderType == 'engineer',
-      }
+      },
     });
   }
+
+
 
   /// ======================
   /// 📩 Engineer Messages
@@ -295,16 +334,19 @@ class EngOrderCubit extends Cubit<EngOrderState> {
         emit(EngineerMessagesLoaded(messages));
       },
       onError: (e) {
-        emit(EngineerMessagesError(e.toString()));
+        debugPrint("listenToMessages error: $e");
+        emit(EngOrderError("حدث خطأ أثناء جلب البيانات"));
       },
+
     );
   }
 
   Future<void> markMessageSeen(String messageId) async {
-    await firestore
-        .collection('engineer_messages')
-        .doc(messageId)
-        .update({'seen': true});
+    try {
+      await firestore.collection('engineer_messages').doc(messageId).update({'seen': true});
+    } catch (e) {
+      debugPrint("markMessageSeen error: $e");
+    }
   }
 
   @override

@@ -1,6 +1,16 @@
-part of 'material_cubit.dart';
 
-@immutable
-sealed class MaterialState {}
+import '../../data/model/material_entity _model.dart';
 
-final class MaterialInitial extends MaterialState {}
+abstract class MaterialState {}
+
+class MaterialLoading extends MaterialState {}
+
+class MaterialLoaded extends MaterialState {
+  final List<MaterialEntity> materials;
+  MaterialLoaded(this.materials);
+}
+
+class MaterialError extends MaterialState {
+  final String message;
+  MaterialError(this.message);
+}

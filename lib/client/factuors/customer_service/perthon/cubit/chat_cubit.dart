@@ -18,6 +18,7 @@ class OrderChatCubit extends Cubit<OrderChatState> {
 
     _subscription?.cancel();
     _subscription = _firestore
+
         .collection('chats')
         .doc(userId)
         .collection('messages')
@@ -45,23 +46,25 @@ class OrderChatCubit extends Cubit<OrderChatState> {
     required String text,
     required String senderId,
     required String senderRole,
+    String? orderId,
   }) async {
     final chatRef = _firestore.collection('chats').doc(userId);
 
-    /// 🔹 Create chat if not exists
+    /// Create chat if not exists
     await chatRef.set({
       'userId': userId,
-      'orderId': null,
+      'orderId': orderId,
       'updatedAt': FieldValue.serverTimestamp(),
       'lastMessage': text,
     }, SetOptions(merge: true));
 
-    /// 🔹 Add message
+    /// Add message
     await chatRef.collection('messages').add({
       'text': text,
       'senderId': senderId,
-      'senderRole': senderRole, // client / engineer / admin
+      'senderRole': senderRole,
       'createdAt': FieldValue.serverTimestamp(),
+      'orderId': orderId,
     });
   }
 

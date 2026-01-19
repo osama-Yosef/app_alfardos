@@ -14,4 +14,16 @@ class ClientBalanceError extends ClientBalanceState {
   final String message;
 
   ClientBalanceError(this.message);
+
+
+}
+
+class ClientOrdersCountSuccess extends ClientBalanceState {
+  final int inProgressCount;
+  final int completedCount;
+
+  ClientOrdersCountSuccess({
+    required this.inProgressCount,
+    required this.completedCount,
+  });
 }

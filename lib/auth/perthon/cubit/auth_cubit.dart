@@ -64,7 +64,9 @@ class AuthCubit extends Cubit<AuthState> {
 
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
 
-      emit(ResetPasswordSuccess("تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك"));
+      emit(
+        ResetPasswordSuccess("تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك"),
+      );
     } on FirebaseAuthException catch (e) {
       emit(ResetPasswordError(_mapFirebaseError(e)));
     } catch (e) {
@@ -94,23 +96,38 @@ class AuthCubit extends Cubit<AuthState> {
       emit(EmailVerificationError("حدث خطأ أثناء التحقق"));
     }
   }
-
   String _mapFirebaseError(FirebaseAuthException e) {
     switch (e.code) {
       case "invalid-email":
         return "البريد الإلكتروني غير صالح";
+
       case "wrong-password":
-        return "كلمة المرور غير صحيحة";
+      case "invalid-password":
+      case "invalid-credential":
+      case "INVALID_LOGIN_CREDENTIALS":
+        return "البريد الإلكتروني أو كلمة المرور غير صحيحة";
+
       case "user-not-found":
-        return "لا يوجد مستخدم بهذا البريد";
+        return "لا يوجد حساب بهذا البريد الإلكتروني";
+
       case "user-disabled":
         return "تم تعطيل هذا الحساب";
+
       case "email-already-in-use":
-        return "هذا البريد مستخدم بالفعل";
+        return "هذا البريد الإلكتروني مستخدم بالفعل";
+
       case "weak-password":
-        return "كلمة المرور ضعيفة جدًا";
+        return "كلمة المرور ضعيفة، يجب أن تكون أقوى";
+
+      case "too-many-requests":
+        return "محاولات كثيرة، حاول مرة أخرى لاحقًا";
+
+      case "network-request-failed":
+        return "تحقق من اتصال الإنترنت";
+
       default:
-        return "حدث خطأ: ${e.message}";
+        return "بيانات تسجيل الدخول غير صحيحة";
     }
   }
+
 }

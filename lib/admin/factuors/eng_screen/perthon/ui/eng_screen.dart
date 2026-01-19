@@ -1,10 +1,8 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../../core/routing/routes.dart';
 import '../../../../../core/wedgit/Widgit_admin/eng_app_par.dart';
-import '../../../../../core/wedgit/widget_client/client_order_requst.dart';
+import '../../../../../core/wedgit/Widgit_admin/eng_screen_order.dart';
 import '../cubit/eng_cubit.dart';
 import '../cubit/eng_state.dart';
 
@@ -25,7 +23,7 @@ class _EngScreenState extends State<EngScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar:EngAppPar(),
+      appBar: EngAppPar(),
 
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -44,7 +42,7 @@ class _EngScreenState extends State<EngScreen> {
                     "الطلبات الوارده",
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: isDesktop ? 26.sp : 22.sp,
+                      fontSize: isDesktop ? 26 : 22,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -72,11 +70,17 @@ class _EngScreenState extends State<EngScreen> {
       listener: (context, state) {
         if (state is EngOrderFileUploaded) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("${state.type} تم رفعه بنجاح")),
+            SnackBar(
+              content: Text("${state.type} تم رفعه بنجاح"),
+              duration: Duration(seconds: 3),
+            ),
           );
         } else if (state is EngOrderError) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("حدث خطأ: ${state.message}")),
+            SnackBar(
+              content: Text("حدث خطأ: ${state.message}"),
+              duration: Duration(seconds: 3),
+            ),
           );
         }
       },
@@ -101,13 +105,30 @@ class _EngScreenState extends State<EngScreen> {
 
                 return Padding(
                   padding: EdgeInsets.only(bottom: 5.h),
-                  child: ClientOrderRequst(
+                  child: EngScreenOrder(
                     order: order,
                     isEngineer: true,
-                    onDelete: () {
-                      context
-                          .read<EngOrderCubit>()
-                          .deleteOrder(order.id);
+                    onDelete: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: const Text("تأكيد الحذف"),
+                          content: const Text("هل تريد حذف الطلب؟"),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text("لا"),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text("نعم"),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm == true) {
+                        context.read<EngOrderCubit>().deleteOrder(order.id);
+                      }
                     },
                   ),
                 );
@@ -124,7 +145,7 @@ class _EngScreenState extends State<EngScreen> {
             );
           }
 
-          return const SizedBox();
+          return const Center(child: Text("جارٍ تحميل البيانات..."));
         },
       ),
     );

@@ -1,73 +1,74 @@
-import 'package:app_alfardos/core/wedgit/wedgit_app/coloers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../admin/factuors/home_screen/perthon/cubit/home_cubit.dart';
+import 'package:app_alfardos/core/wedgit/wedgit_app/coloers.dart';
 
-import 'order_item.dart';
-
-class ForActiveRequests extends StatefulWidget {
+class ForActiveRequests extends StatelessWidget {
   const ForActiveRequests({super.key});
 
-  @override
-  State<ForActiveRequests> createState() => _ForActiveRequestsState();
-}
-
-class _ForActiveRequestsState extends State<ForActiveRequests> {
-  List<OrderItem> orders = [];
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-
       padding: EdgeInsets.symmetric(vertical: 20, horizontal: 30),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8.r),
         color: Colors.white10,
       ),
-
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(color: Colors.white12, width: 2.w),
-                ),
-                padding: EdgeInsets.all(8),
-                child: Icon(Icons.add_chart, color: Colors.white, size: 24.sp),
-              ),
+              Icon(Icons.add_chart, color: Colors.white),
               SizedBox(width: 10.w),
               Text(
-                "لطلبات النشطة",
-                style: TextStyle(
-                  fontSize: 20.sp,
-                  fontWeight: FontWeight.w200,
-                  color: Colors.white70,
-                ),
+                "الطلبات النشطة",
+                style: TextStyle(fontSize: 20.sp, color: Colors.white70),
               ),
             ],
           ),
           SizedBox(height: 25.h),
-          Contaner2(
-            Title: "شركة الحديد المتقدم",
-            Matrial: 'أنابيب فولاذية',
-            TimeDate: "موعد التسليم: 2025-01-20",
-          ),
-          SizedBox(height: 15.h,),
-          Contaner2(
-            Title: "مؤسسة المعادن الحديثة",
-            Matrial: 'ألواح ألمنيوم',
-            TimeDate: "موعد التسليم: 2025-01-25",
-          ),
-          SizedBox(height: 15.h,),
-          Contaner2(
-            Title: "صناعات النحاس",
-            Matrial: 'قطع نحاسية مخصصة',
-            TimeDate: "موعد التسليم: 2025-01-29",
+
+          BlocBuilder<HomeCubit, HomeState>(
+            builder: (context, state) {
+              if (state is HomeLoading) {
+                return const CircularProgressIndicator();
+              }
+
+              if (state is HomeOrdersLoaded) {
+                if (state.orders.isEmpty) {
+                  return Text(
+                    'لا توجد طلبات نشطة',
+                    style: TextStyle(color: Colors.white54),
+                  );
+                }
+
+                return Column(
+                  children: state.orders.map((order) {
+                    return Padding(
+                      padding: EdgeInsets.only(bottom: 15.h),
+                      child: Contaner2(
+                        Title: order.name,
+                        Matrial: order.matrial,
+                        TimeDate: "موعد التسليم: ${order.deliveryDate}",
+                        progress: order.progress,
+                      ),
+                    );
+                  }).toList(),
+                );
+              }
+
+              if (state is HomeError) {
+                return Text(
+                  state.message,
+                  style: const TextStyle(color: Colors.red),
+                );
+              }
+
+              return const SizedBox();
+            },
           ),
         ],
       ),
@@ -81,18 +82,21 @@ class Contaner2 extends StatelessWidget {
     required this.Title,
     required this.Matrial,
     required this.TimeDate,
+    required this.progress,
   });
 
   final String Title;
   final String Matrial;
   final String TimeDate;
+  final double progress;
 
   @override
   Widget build(BuildContext context) {
+    final int progressPercent = (progress * 100).toInt();
+
     return Container(
       width: double.infinity,
       height: 200.h,
-
       padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
       decoration: BoxDecoration(
         color: Colors.black26,
@@ -101,57 +105,42 @@ class Contaner2 extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Center(
             child: Text(
               Title,
               style: TextStyle(
-                fontSize: 20.sp,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white),
             ),
           ),
           SizedBox(height: 8.h),
           Text(
             Matrial,
             style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.bold,
-              color: Colors.white60,
-            ),
+                fontSize: 18.sp, fontWeight: FontWeight.bold, color: Colors.white60),
           ),
           SizedBox(height: 8.h),
           Text(
             TimeDate,
             style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.bold,
-              color: Colors.white60,
-            ),
+                fontSize: 18.sp, fontWeight: FontWeight.bold, color: Colors.white60),
           ),
-          SizedBox(height: 8.h),
-          Column(
+          SizedBox(height: 12.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(width: 8.w),
-                  Text('التقدم', style: TextStyle(color: Colors.white)),
-
-                  SizedBox(width: 8.w),
-                  Text('45%', style: TextStyle(color: Colors.white)),
-                ],
-              ),
-              LinearProgressIndicator(
-                value: 0.45.sp,
-                backgroundColor: Colors.grey[800],
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
-                minHeight: 6.h,
-              ),
+              Text('التقدم', style: TextStyle(color: Colors.white)),
+              Text('$progressPercent%', style: TextStyle(color: Colors.white)),
             ],
+          ),
+          SizedBox(height: 6.h),
+          LinearProgressIndicator(
+            value: progress,
+            backgroundColor: Colors.grey[800],
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+            minHeight: 6.h,
           ),
         ],
       ),

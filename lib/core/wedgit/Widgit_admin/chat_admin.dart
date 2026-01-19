@@ -4,12 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class AdminChatPage extends StatefulWidget {
-  final String orderId;
   final String userId;
 
   const AdminChatPage({
     super.key,
-    required this.orderId,
     required this.userId,
   });
 
@@ -22,7 +20,7 @@ class _AdminChatPageState extends State<AdminChatPage> {
 
   CollectionReference get chatRef => FirebaseFirestore.instance
       .collection('chats')
-      .doc(widget.orderId)
+      .doc(widget.userId)
       .collection('messages');
 
   /// ===============================
@@ -53,7 +51,7 @@ class _AdminChatPageState extends State<AdminChatPage> {
 
     await FirebaseFirestore.instance
         .collection('chats')
-        .doc(widget.orderId)
+        .doc(widget.userId)
         .update({
       'lastMessage': text,
       'updatedAt': FieldValue.serverTimestamp(),

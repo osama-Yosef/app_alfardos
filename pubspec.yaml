@@ -63,6 +63,9 @@ dependencies:
   responsive_wrapper: ^1.0.2
   http: ^1.6.0
   flutter_local_notifications: ^19.5.0
+  bloc: ^9.2.0
+  intl: ^0.20.2
+  meta: ^1.17.0
 
 
 dev_dependencies:

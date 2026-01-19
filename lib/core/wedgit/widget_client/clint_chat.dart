@@ -4,12 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ClientChatPage extends StatefulWidget {
-  final String orderId;
+  final String userId;
 
-  const ClientChatPage({
-    super.key,
-    required this.orderId, required String userId,
-  });
+  const ClientChatPage({super.key, required this.userId});
 
   @override
   State<ClientChatPage> createState() => _ClientChatPageState();
@@ -21,7 +18,7 @@ class _ClientChatPageState extends State<ClientChatPage> {
 
   CollectionReference get chatRef => FirebaseFirestore.instance
       .collection('chats')
-      .doc(widget.orderId)
+      .doc(widget.userId)
       .collection('messages');
 
   @override
@@ -31,19 +28,19 @@ class _ClientChatPageState extends State<ClientChatPage> {
   }
 
   Future<void> ensureChatExists() async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final uid = widget.userId;
 
-    final userDoc =
-    await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
 
     userName = userDoc.data()?['name'] ?? 'عميل';
 
-    final chatDoc =
-    FirebaseFirestore.instance.collection('chats').doc(widget.orderId);
+    final chatDoc = FirebaseFirestore.instance.collection('chats').doc(uid);
 
     if (!(await chatDoc.get()).exists) {
       await chatDoc.set({
-        'orderId': widget.orderId,
         'userId': uid,
         'userName': userName,
         'createdAt': FieldValue.serverTimestamp(),
@@ -57,23 +54,28 @@ class _ClientChatPageState extends State<ClientChatPage> {
     final text = messageController.text.trim();
     if (text.isEmpty) return;
     await ensureChatExists();
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final currentUser = FirebaseAuth.instance.currentUser!;
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .get();
+    final userRole = userDoc.data()?['role'] ?? 'client';
 
     await chatRef.add({
       'text': text,
-      'senderId': uid,
+      'senderId': currentUser.uid,
       'senderName': userName,
-      'senderType': 'client',
+      'senderType': (userRole == 'client') ? 'client' : 'eng',
       'createdAt': FieldValue.serverTimestamp(),
     });
 
     await FirebaseFirestore.instance
         .collection('chats')
-        .doc(widget.orderId)
+        .doc(widget.userId)
         .update({
-      'updatedAt': FieldValue.serverTimestamp(),
-      'lastMessage': text,
-    });
+          'updatedAt': FieldValue.serverTimestamp(),
+          'lastMessage': text,
+        });
 
     messageController.clear();
   }
@@ -82,102 +84,98 @@ class _ClientChatPageState extends State<ClientChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          color: Colors.white,
+        ),
+
+        title: Text(
           'محادثة الدعم الفني',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20.sp,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: chatRef.orderBy('createdAt').snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox();
-                }
+      body: Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Column(
+          children: [
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: chatRef.orderBy('createdAt').snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(child: Text('لا توجد رسائل بعد'));
+                  }
 
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'لا توجد رسائل بعد',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16.sp,
-                      ),
-                    ),
-                  );
-                }
+                  final messages = snapshot.data!.docs;
 
-                final messages = snapshot.data!.docs;
+                  return ListView.builder(
+                    itemCount: messages.length,
+                    itemBuilder: (context, index) {
+                      final data = messages[index].data() as Map<String, dynamic>;
+                      final isMe =
+                          data['senderId'] ==
+                          FirebaseAuth.instance.currentUser!.uid;
 
-                return ListView.builder(
-                  padding: EdgeInsets.all(12.w),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final data =
-                    messages[index].data() as Map<String, dynamic>;
-
-                    final isMe = data['senderId'] ==
-                        FirebaseAuth.instance.currentUser!.uid;
-
-                    return Align(
-                      alignment:
-                      isMe ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Container(
-                        margin: EdgeInsets.symmetric(vertical: 4.h),
-                        padding: EdgeInsets.all(12.w),
-                        decoration: BoxDecoration(
-                          color: isMe ? Colors.blue : Colors.deepPurple,
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              data['senderName'] ?? 'مستخدم',
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: Colors.white70,
-                                fontWeight: FontWeight.bold,
+                      return Align(
+                        alignment: isMe
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isMe ? Colors.green : Colors.blueGrey,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                data['senderName'] ?? 'مستخدم',
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600
+                                ),
                               ),
-                            ),
-                            SizedBox(height: 4.h),
-                            Text(
-                              data['text'],
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ],
+                              Text(
+                                data['text'],
+                                style: const TextStyle(color: Colors.white,fontSize: 18,fontWeight: FontWeight.w700),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                );
-              },
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: messageController,
-                  cursorColor: Colors.white,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    hintText: 'اكتب رسالتك...',
-                    hintStyle: TextStyle(color: Colors.white54),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: messageController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'اكتب رسالتك...',
+                      hintStyle: TextStyle(color: Colors.white54),
+                    ),
                   ),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.send, color: Colors.blue),
-                onPressed: sendMessage,
-              ),
-            ],
-          ),
-        ],
+                IconButton(icon: const Icon(Icons.send), onPressed: sendMessage),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

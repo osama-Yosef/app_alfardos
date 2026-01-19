@@ -11,6 +11,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'admin/factuors/eng_screen/perthon/cubit/eng_cubit.dart';
 import 'admin/factuors/factor/perthon/cuibt/factor_cubit.dart';
+import 'admin/factuors/home_screen/perthon/cubit/home_cubit.dart';
+import 'admin/factuors/live_production_follow_up/data/repo/repo.dart';
+import 'admin/factuors/live_production_follow_up/perthon/cubit/material_cubit.dart';
 import 'admin/factuors/setting/perthon/cubit/pricing_cubit.dart';
 import 'app_alfardos/my_app.dart';
 import 'auth/data/repo/auth_repo_impl.dart';
@@ -19,26 +22,26 @@ import 'client/factuors/client_order/perthon/cubit/order_cubit.dart';
 import 'client/factuors/home_screen/perthon/cuibt/client_balance_cubit.dart';
 import 'firebase_options.dart';
 
-/// ================= FCM Background =================
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 }
 
 Future<void> main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterError.onError = (details) {
+    debugPrint(details.exceptionAsString());
+  };
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-  await ScreenUtil.ensureScreenSize();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  FirebaseMessaging.onBackgroundMessage(
-    firebaseMessagingBackgroundHandler,
-  );
+  try {
+    if (!Platform.isWindows) {
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    }
+  } catch (e) {
+    debugPrint("FCM background handler error: $e");
+  }
 
   await FirebaseMessaging.instance.requestPermission(
     alert: true,
@@ -55,40 +58,47 @@ Future<void> main() async {
     debugPrint("Firebase App Check disabled on Windows");
   }
 
+  final materialRepository = MaterialRepository(FirebaseFirestore.instance);
+
   runApp(
     MultiBlocProvider(
       providers: [
         /// AUTH
-        BlocProvider<AuthCubit>(
-          create: (_) => AuthCubit(AuthRepoImpl()),
-        ),
+        BlocProvider<AuthCubit>(create: (_) => AuthCubit(AuthRepoImpl())),
 
         /// CLIENT
-        BlocProvider<OrderCubit>(
-          create: (_) => OrderCubit(),
-        ),
-        BlocProvider<ClientBalanceCubit>(
-          create: (_) => ClientBalanceCubit(),
-        ),
+        BlocProvider<OrderCubit>(create: (_) => OrderCubit()),
+        BlocProvider<ClientBalanceCubit>(create: (_) => ClientBalanceCubit()),
 
         /// ENGINEER
-        BlocProvider<EngOrderCubit>(
-          create: (_) => EngOrderCubit(),
-        ),
+        BlocProvider<EngOrderCubit>(create: (_) => EngOrderCubit()),
 
         /// ADMIN - SETTING
         BlocProvider<SettingCubit>(
-          create: (_) =>
-              SettingCubit(FirebaseFirestore.instance),
+          create: (_) => SettingCubit(FirebaseFirestore.instance),
         ),
 
         /// FACTOR (التنفيذ)
         BlocProvider<ImplementCubit>(
-          create: (_) =>
-              ImplementCubit(FirebaseFirestore.instance),
+          create: (_) => ImplementCubit(FirebaseFirestore.instance),
+        ),
+
+        /// Materia (الصفحه المخزن)
+        BlocProvider<MaterialCubit>(
+          create: (_) => MaterialCubit(materialRepository),
+        ),
+
+        /// Home (الصفحه الرئسيه)
+        BlocProvider<HomeCubit>(
+          create: (_) => HomeCubit(FirebaseFirestore.instance),
         ),
       ],
-      child: const MyApp(),
+      child: ScreenUtilInit(
+        designSize: const Size(375, 812),
+        minTextAdapt: true,
+        builder: (_, child) => child!,
+        child: const MyApp(),
+      ),
     ),
   );
 

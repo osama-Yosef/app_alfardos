@@ -32,9 +32,10 @@ class OrderRebo {
       );
       return res.secureUrl;
     } catch (e) {
-      throw Exception("رفع الملف فشل: $e");
+      throw Exception("رفع الفيديو فشل: $e");
     }
   }
+
 
   Future<void> saveOrder(OrderModel order) async {
     await _firestore.collection("orders").add(order.toMap());

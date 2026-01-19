@@ -1,80 +1,87 @@
+import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
+
 import '../../data/model/model_prise.dart';
 import '../../../../../client/factuors/client_order/data/model/order_model.dart';
 import 'pricing_state.dart';
 
 class SettingCubit extends Cubit<SettingState> {
   final FirebaseFirestore firestore;
+  StreamSubscription<QuerySnapshot>? _ordersSub;
 
   SettingCubit(this.firestore) : super(SettingInitial());
 
-  /// الاستماع للطلبات + قراءة مراجعة المهندس
+  // ===============================
+  // الاستماع للطلبات + مراجعة المهندس
+  // ===============================
   void listenToOrders() {
     emit(SettingLoading());
 
-    firestore
+    _ordersSub?.cancel(); // 🔴 مهم جدًا
+
+    _ordersSub = firestore
         .collection('orders')
         .orderBy('createdAt', descending: true)
         .snapshots()
         .listen((snapshot) {
-          final orders = snapshot.docs.map((doc) {
-            final order = OrderModel.fromFirestore(doc.data(), doc.id);
+      final orders = snapshot.docs.map((doc) {
+        final data = doc.data();
 
-            final engReview =
-                doc.data()['eng review price'] as Map<String, dynamic>?;
+        if (!data.containsKey('eng review price')) return null;
 
-            return PricingModel.fromOrder(order, engReview);
-          }).toList();
+        final engReviewRaw = data['eng review price'];
+        if (engReviewRaw is! Map<String, dynamic>) return null;
 
-          emit(SettingLoaded(orders: orders));
-        }, onError: (e) => emit(SettingError(e.toString())));
+        final order = OrderModel.fromFirestore(data, doc.id);
+        return PricingModel.fromOrder(order, engReviewRaw);
+      }).whereType<PricingModel>().toList();
+
+      emit(SettingLoaded(orders: orders));
+    }, onError: (e) {
+      emit(SettingError(e.toString()));
+    });
   }
 
   // ===============================
   // تأكيد تنفيذ الأوردر
   // ===============================
-  Future<void> confirmOrderForExecution({required String orderId}) async {
+  Future<void> confirmOrderForExecution({
+    required String orderId,
+  }) async {
     try {
-      /// 1️⃣ جلب الأوردر
       final orderRef = firestore.collection('orders').doc(orderId);
       final orderDoc = await orderRef.get();
 
       if (!orderDoc.exists) {
-        throw Exception("Order not found");
+        throw Exception('Order not found');
       }
 
       final orderData = orderDoc.data()!;
-      final engReviewPrice = orderData['eng review price'];
+      final engReview = orderData['eng review price'];
 
-      if (engReviewPrice == null) {
-        throw Exception("eng review price not found");
+      if (engReview is! Map<String, dynamic>) {
+        throw Exception('Invalid eng review price');
       }
 
-      /// 2️⃣ إنشاء أوردر في كوليكشن التنفيذ
       await firestore.collection('to_implement').add({
         'orderId': orderId,
-        'clientId': orderData['userId'],
-        'name': orderData['name'],
+        'clientId': orderData['userId'] ?? '',
+        'name': orderData['name'] ?? '',
         'orderDate': orderData['createdAt'],
         'eng review price': {
-          'date': engReviewPrice['date'],
-          'engineerId': engReviewPrice['engineerId'],
-          'files': engReviewPrice['files'] ?? [],
-          'images': engReviewPrice['images'] ?? [],
-          'note': engReviewPrice['note'],
+          'date': engReview['date'],
+          'engineerId': engReview['engineerId'],
+          'files': List<String>.from(engReview['files'] ?? []),
+          'images': List<String>.from(engReview['images'] ?? []),
+          'note': engReview['note'] ?? '',
         },
         'status': 'waiting_execution',
         'executionDate': FieldValue.serverTimestamp(),
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      /// 3️⃣ تحديث حالة الأوردر
       await orderRef.update({'status': 'execution'});
-
-      /// 4️⃣ إعادة تحميل الطلبات بدون كسر الصفحة
-      listenToOrders();
 
       emit(ConfirmOrderSuccess());
     } catch (e) {
@@ -82,22 +89,39 @@ class SettingCubit extends Cubit<SettingState> {
     }
   }
 
-
-  void addPricingClient({
+  // ===============================
+  // إضافة تسعير العميل
+  // ===============================
+  Future<void> addPricingClient({
     required String orderId,
-    required double totalPrice,
-    required double materialPrice,
-    required double laserPrice,
+    required int totalPrice,
+    required int materialPrice,
+    required int laserPrice,
+    required String dateOfReceipt,
     String? noteClient,
-  }) {
-    firestore.collection('orders').doc(orderId).update({
-      'client pricing': {
-        'total': totalPrice,
-        'material': materialPrice,
-        'laser': laserPrice,
-        'note': noteClient ?? '',
-        'date': DateTime.now().toIso8601String(),
-      },
-    });
+  }) async {
+    try {
+      await firestore.collection('orders').doc(orderId).update({
+        'client pricing': {
+          'total': totalPrice,
+          'material': materialPrice,
+          'laser': laserPrice,
+          'note': noteClient ?? '',
+          'date': DateTime.now().toIso8601String(),
+          'dateOfReceipt': dateOfReceipt,
+          'paid': 0,
+          'remaining': totalPrice,
+          'isPaid': false,
+        },
+      });
+    } catch (e) {
+      emit(SettingError(e.toString()));
+    }
+  }
+
+  @override
+  Future<void> close() {
+    _ordersSub?.cancel();
+    return super.close();
   }
 }

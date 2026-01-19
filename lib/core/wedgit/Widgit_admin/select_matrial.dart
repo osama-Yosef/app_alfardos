@@ -1,180 +1,132 @@
-import 'package:app_alfardos/core/wedgit/wedgit_app/custom_text_form.dart';
+// ===================== select_material_dialog.dart =====================
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'material_item.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../admin/factuors/live_production_follow_up/data/model/material_entity _model.dart';
+import '../../../admin/factuors/live_production_follow_up/perthon/cubit/material_cubit.dart';
 
-class SelectMatrial extends StatefulWidget {
-  final Function(MaterialItem) onAdd;
-
-  const SelectMatrial({super.key, required this.onAdd}); // ✅ تم التصحيح
+class SelectMaterialDialog extends StatefulWidget {
+  const SelectMaterialDialog({super.key});
 
   @override
-  State<SelectMatrial> createState() => _SelectMatrialState();
+  State<SelectMaterialDialog> createState() => _SelectMaterialDialogState();
 }
 
-class _SelectMatrialState extends State<SelectMatrial> {
+class _SelectMaterialDialogState extends State<SelectMaterialDialog> {
+  final _formKey = GlobalKey<FormState>();
+
   final nameController = TextEditingController();
   final supplierController = TextEditingController();
   final priceController = TextEditingController();
   final minController = TextEditingController();
   final maxController = TextEditingController();
 
-  String? selectedCategory;
-  String? selectedUnit;
+  String? category;
+  String? unit;
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    supplierController.dispose();
+    priceController.dispose();
+    minController.dispose();
+    maxController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      insetPadding: const EdgeInsets.all(16),
-      backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-      child: Container(
-        width: 400.w,
-        padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "إضافة مادة جديدة",
-                style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 20.h),
-
-              /// اسم المادة
-              CustomTextForm(
-                hintText: "اسم المادة",
-                lapText: "اسم المادة",
-                controller: nameController,
-                validator: (a) {},
-              ),
-
-              SizedBox(height: 15.h),
-
-              /// Dropdowns
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: selectedUnit,
-                      items: const [
-                        DropdownMenuItem(value: 'لوح', child: Text('لوح')),
-                        DropdownMenuItem(value: 'كجم', child: Text('كجم')),
-                        DropdownMenuItem(value: 'طن', child: Text('طن')),
-                      ],
-                      decoration: InputDecoration(
-                        labelText: 'الوحدة',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.r),
-                        ),
-                      ),
-                      onChanged: (val) {
-                        setState(() => selectedUnit = val);
-                      },
+      child: Padding(
+        padding: EdgeInsets.all(16.w),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "إضافة مادة",
+                  style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 16.h),
+                _textField("اسم المادة", nameController),
+                SizedBox(height: 10.h),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _dropdown("الفئة", ["حديد", "استلس", "ألمنيوم"], (v) => category = v),
                     ),
-                  ),
-                  SizedBox(width: 10.w),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: selectedCategory,
-                      items: const [
-                        DropdownMenuItem(value: 'حديد', child: Text('حديد')),
-                        DropdownMenuItem(value: 'استلس', child: Text('استلس')),
-                        DropdownMenuItem(value: 'المونيوم', child: Text('المونيوم')),
-                      ],
-                      decoration: InputDecoration(
-                        labelText: 'الفئة',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.r),
-                        ),
-                      ),
-                      onChanged: (val) {
-                        setState(() => selectedCategory = val);
-                      },
+                    SizedBox(width: 10.w),
+                    Expanded(
+                      child: _dropdown("الوحدة", ["كجم", "طن", "لوح"], (v) => unit = v),
                     ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: 15.h),
-
-              /// الحدود
-              Row(
-                children: [
-                  Expanded(
-                    child: CustomTextForm(
-                      hintText: 'الحد الأعلى',
-                      lapText: 'الحد الأعلى',
-                      controller: maxController,
-                      validator: (a) {},
-                    ),
-                  ),
-                  SizedBox(width: 10.w),
-                  Expanded(
-                    child: CustomTextForm(
-                      hintText: 'الحد الأدنى',
-                      lapText: 'الحد الأدنى',
-                      controller: minController,
-                      validator: (a) {},
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: 15.h),
-
-              /// السعر والمورد
-              CustomTextForm(
-                hintText: "سعر القطعة",
-                lapText: "السعر",
-                controller: priceController,
-                validator: (a) {},
-              ),
-              SizedBox(height: 15.h),
-              CustomTextForm(
-                controller: supplierController,
-                hintText: "اسم المورد",
-                lapText: "اسم المورد",
-                validator: (a) {},
-              ),
-
-              SizedBox(height: 20.h),
-
-              /// زر الإضافة
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    padding: EdgeInsets.symmetric(vertical: 14.w),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                  ),
-                  onPressed: () {
-                    final newMaterial = MaterialItem(
-                      name: nameController.text,
-                      category: selectedCategory ?? '',
-                      unit: selectedUnit ?? '',
-                      price: double.tryParse(priceController.text) ?? 0,
-                      supplier: supplierController.text,
-                      minLimit: double.tryParse(minController.text) ?? 0,
-                      maxLimit: double.tryParse(maxController.text) ?? 0,
-                    );
-                    widget.onAdd(newMaterial);
-                    Navigator.pop(context);
-                  },
-                  child: Text(
-                    'إضافة المادة',
-                    style: TextStyle(fontSize: 16.sp, color: Colors.white),
+                  ],
+                ),
+                SizedBox(height: 10.h),
+                _textField("الحد الأدنى", minController, isNumber: true),
+                SizedBox(height: 10.h),
+                _textField("الحد الأعلى", maxController, isNumber: true),
+                SizedBox(height: 10.h),
+                _textField("السعر", priceController, isNumber: true),
+                SizedBox(height: 10.h),
+                _textField("اسم المورد", supplierController),
+                SizedBox(height: 20.h),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _submit,
+                    child: const Text("إضافة"),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+
+    final material = MaterialEntity(
+      id: '',
+      name: nameController.text,
+      category: category ?? "",
+      unit: unit ?? "",
+      price: double.parse(priceController.text),
+      supplier: supplierController.text,
+      minLimit: double.parse(minController.text),
+      maxLimit: double.parse(maxController.text),
+    );
+
+    context.read<MaterialCubit>().addMaterial(material);
+    Navigator.pop(context);
+  }
+
+  Widget _textField(String label, TextEditingController controller, {bool isNumber = false}) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+      validator: (v) => v!.isEmpty ? "مطلوب" : null,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r)),
+      ),
+    );
+  }
+
+  Widget _dropdown(String label, List<String> items, Function(String?) onChanged) {
+    return DropdownButtonFormField<String>(
+      validator: (v) => v == null ? "مطلوب" : null,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r)),
+      ),
+      items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+      onChanged: onChanged,
     );
   }
 }

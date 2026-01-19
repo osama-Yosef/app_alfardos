@@ -57,12 +57,14 @@ class WorkModel {
 
   factory WorkModel.fromMap(Map<String, dynamic> map, String id) {
     DateTime parsedDate = DateTime.now();
-    if (map['date'] is Timestamp) {
-      parsedDate = (map['date'] as Timestamp).toDate();
-    } else if (map['date'] is String) {
-      parsedDate = DateTime.tryParse(map['date']) ?? DateTime.now();
-    } else if (map['date'] is int) {
-      parsedDate = DateTime.fromMillisecondsSinceEpoch(map['date']);
+    if (map['date'] != null) {
+      if (map['date'] is Timestamp) {
+        parsedDate = (map['date'] as Timestamp).toDate();
+      } else if (map['date'] is String) {
+        parsedDate = DateTime.tryParse(map['date']) ?? DateTime.now();
+      } else if (map['date'] is int) {
+        parsedDate = DateTime.fromMillisecondsSinceEpoch(map['date']);
+      }
     }
 
     return WorkModel(

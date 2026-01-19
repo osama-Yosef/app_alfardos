@@ -41,17 +41,14 @@ class ClientShowOrderPage extends StatelessWidget {
                 return const Center(
                   child: Text(
                     'لا توجد طلبات جاهزة للعرض',
-                    style: TextStyle(fontSize: 16),
+                    style: TextStyle(fontSize: 25,color: Colors.white),
                   ),
                 );
               }
 
               return Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxWidth: 800,
-
-                  ),
+                  constraints: const BoxConstraints(maxWidth: 800),
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: filteredOrders.length,
@@ -62,8 +59,10 @@ class ClientShowOrderPage extends StatelessWidget {
                         data['client pricing'] ?? {},
                       );
 
-                      final String orderId = data['orderId'];
+                      final String orderId = data['orderId'] ?? 'غير معروف';
                       final String product = data['prodact'] ?? 'بدون اسم';
+                      final String dateOfReceipt = pricing['dateOfReceipt'] ?? '';
+                      final String note = pricing['note'] ?? '';
 
                       double paid = (pricing['paid'] ?? 0).toDouble();
                       double total = (pricing['total'] ?? 0).toDouble();
@@ -101,6 +100,10 @@ class ClientShowOrderPage extends StatelessWidget {
                             _row("الخامه", pricing['material'] ?? 0),
                             _row("ملحوظه", pricing['note'] ?? ''),
                             _row("الاجمالي", pricing['total'] ?? 0),
+                            _row(
+                              "موعد الاستلام",
+                              pricing['dateOfReceipt'] ?? 0,
+                            ),
 
                             const SizedBox(height: 12),
 
@@ -116,7 +119,8 @@ class ClientShowOrderPage extends StatelessWidget {
                                       isScrollControlled: true,
                                       builder: (sheetContext) {
                                         return BlocProvider.value(
-                                          value: context.read<ClientOrderCubit>(),
+                                          value: context
+                                              .read<ClientOrderCubit>(),
                                           child: PayDepositSheet(
                                             orderId: orderId,
                                             orderName: product,
@@ -258,15 +262,15 @@ class _PayDepositSheetState extends State<PayDepositSheet> {
             onPressed: image == null
                 ? null
                 : () {
-              context.read<ClientOrderCubit>().confirmPayment(
-                orderId: widget.orderId,
-                orderName: widget.orderName,
-                total: widget.total,
-                deposit: double.parse(amountCtrl.text),
-                receiptImage: image!,
-              );
-              Navigator.pop(context);
-            },
+                    context.read<ClientOrderCubit>().confirmPayment(
+                      orderId: widget.orderId,
+                      orderName: widget.orderName,
+                      total: widget.total,
+                      deposit: double.parse(amountCtrl.text),
+                      receiptImage: image!,
+                    );
+                    Navigator.pop(context);
+                  },
             child: const Text("تأكيد الدفع"),
           ),
         ],

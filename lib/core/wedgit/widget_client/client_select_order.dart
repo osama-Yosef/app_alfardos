@@ -108,8 +108,14 @@ class _ClientSelectOrderState extends State<ClientSelectOrder> {
               hintText: "الاسم الكامل",
               lapText: "الاسم",
               controller: nameController,
-              validator: (a) {},
+              validator: (a) {
+                if ((a ?? '').isEmpty) {
+                  return "الاسم مطلوب";
+                }
+                return null;
+              },
             ),
+
             SizedBox(height: 15.h),
             CustomTextForm(
               hintText: "010*****59",
@@ -267,8 +273,8 @@ class _ClientSelectOrderState extends State<ClientSelectOrder> {
                   ),
                 ),
                 onPressed: () {
-                  if (nameController.text.isEmpty ||
-                      numperController.text.isEmpty ||
+
+                  if (
                       productController.text.isEmpty ||
                       selectedMaterial == null ||
                       amountController.text.isEmpty ||

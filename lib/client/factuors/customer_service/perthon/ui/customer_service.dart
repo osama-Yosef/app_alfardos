@@ -19,30 +19,12 @@ class _ClientServicePageState extends State<ClientServicePage> {
   Future<void> openChat(BuildContext context) async {
     final userId = FirebaseAuth.instance.currentUser!.uid;
 
-    final query = await FirebaseFirestore.instance
-        .collection('orders')
-        .where('userId', isEqualTo: userId)
-        .orderBy('createdAt', descending: true)
-        .limit(1)
-        .get();
-
-    if (query.docs.isNotEmpty) {
-      final doc = query.docs.first;
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ClientChatPage(
-            orderId: doc.id,
-            userId: userId,
-          ),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('لا يوجد طلبات لهذا الحساب')),
-      );
-    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ClientChatPage(userId: userId),
+      ),
+    );
   }
 
   Future<void> _launchWhatsApp() async {
@@ -65,7 +47,6 @@ class _ClientServicePageState extends State<ClientServicePage> {
       ),
     );
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

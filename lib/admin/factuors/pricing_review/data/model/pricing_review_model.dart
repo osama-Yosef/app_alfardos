@@ -1,36 +1,16 @@
 class PricingReviewModel {
-  /// id الأوردر نفسه (document id)
   final String orderId;
-
-  /// تاريخ إضافة التسعير
   final String date;
-
-  /// هل تم السداد بالكامل
   final bool isPaid;
-
-  /// سعر الليزر
   final int laser;
-
-  /// سعر الخامة
   final int material;
-
-  /// آخر عربون تم دفعه
   final int lastDeposit;
-
-  /// إجمالي المدفوع
   final int paid;
-
-  /// المتبقي على العميل
   final int remaining;
-
-  /// السعر الكلي
   final int total;
-
-  /// ملاحظة
   final String note;
-
-  /// صورة إيصال التحويل (ممكن تكون فاضية لو كاش)
   final String receipt;
+  final String clientName;
 
   PricingReviewModel({
     required this.orderId,
@@ -44,13 +24,14 @@ class PricingReviewModel {
     required this.total,
     required this.note,
     required this.receipt,
+    required this.clientName,
   });
 
   /// ================= FROM FIRESTORE =================
   factory PricingReviewModel.fromMap(
-      Map<String, dynamic> map, {
-        required String orderId,
-      }) {
+    Map<String, dynamic> map, {
+    required String orderId,
+  }) {
     return PricingReviewModel(
       orderId: orderId,
       date: map['date'] ?? '',
@@ -63,6 +44,7 @@ class PricingReviewModel {
       total: (map['total'] ?? 0).toInt(),
       note: map['note'] ?? '',
       receipt: map['receipt'] ?? '',
+      clientName: map['clientName'] ?? '',
     );
   }
 
@@ -79,6 +61,7 @@ class PricingReviewModel {
       'total': total,
       'note': note,
       'receipt': receipt,
+      'clientName':clientName,
     };
   }
 
@@ -90,6 +73,7 @@ class PricingReviewModel {
     bool? isPaid,
     String? receipt,
     String? note,
+    String?clientName,
   }) {
     return PricingReviewModel(
       orderId: orderId,
@@ -103,6 +87,7 @@ class PricingReviewModel {
       total: total,
       note: note ?? this.note,
       receipt: receipt ?? this.receipt,
+      clientName: clientName ?? this.clientName,
     );
   }
 }

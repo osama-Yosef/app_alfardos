@@ -70,15 +70,10 @@ class _LoginScreenState extends State<LoginScreen> {
               context,
               MaterialPageRoute(builder: (_) => EngScreen()),
             );
-          } else if (state.role == "Factor") {
+          } else if (state.role.toString().toLowerCase() == "factor") {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (_) => BlocProvider.value(
-                  value: context.read<ImplementCubit>(),
-                  child: const FactorPage(),
-                ),
-              ),
+              MaterialPageRoute(builder: (_) => Factor()),
             );
           } else {
             Navigator.pushNamed(

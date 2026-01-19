@@ -34,32 +34,14 @@ class ClientOrderRequst extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "الاسم: ${order.name}",
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          SizedBox(height: 10.h),
-          Text(
-            "الهاتف: ${order.numper}",
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          SizedBox(height: 10.h),
-          Text(
             "المنتج: ${order.prodact}",
             style: TextStyle(
-              fontSize: 18.sp,
+              fontSize: 20.sp,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Colors.blueAccent,
             ),
           ),
-          SizedBox(height: 10.h),
+          SizedBox(height: 15.h),
           Text(
             "المادة: ${order.matrial}",
             style: TextStyle(
@@ -110,55 +92,9 @@ class ClientOrderRequst extends StatelessWidget {
                 ),
               ),
               SizedBox(width: 8.w),
-              Expanded(
-                child: InkWell(
-                  onTap: onDelete,
-                  child: _iconContainer(Icons.delete, color: Colors.red),
-                ),
-              ),
             ],
           ),
-
-          if (isEngineer == true) ...[
-            SizedBox(height: 10.h),
-            ElevatedButton.icon(
-              onPressed: () {
-                openSendDialog(
-                  context: context,
-                  cubit: context.read<EngOrderCubit>(),
-                  orderId: order.id,
-                  type: "review clint",
-                );
-              },
-              icon: Icon(Icons.design_services),
-              label: Text(
-                "إرسال مراجعة رسم / تأكيد العميل",
-                style: TextStyle(fontSize: 15.sp),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                minimumSize: Size(double.infinity, 45),
-              ),
-            ),
-            SizedBox(height: 10.h),
-            ElevatedButton.icon(
-              onPressed: () {
-                openSendDialog(
-                  context: context,
-                  cubit: context.read<EngOrderCubit>(),
-                  orderId: order.id,
-                  type: "eng review price",
-                );
-              },
-              icon: Icon(Icons.attach_money),
-              label: Text("رفع ملف التسعير", style: TextStyle(fontSize: 15.sp)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                minimumSize: Size(double.infinity, 45),
-              ),
-            ),
           ],
-        ],
       ),
     );
   }
@@ -192,100 +128,3 @@ class ClientOrderRequst extends StatelessWidget {
   }
 }
 
-void openSendDialog({
-  required BuildContext context,
-  required EngOrderCubit cubit,
-  required String orderId,
-  required String type,
-}) {
-  final TextEditingController noteController = TextEditingController();
-  List<File> selectedImages = [];
-  List<File> selectedFiles = [];
-
-  showDialog(
-    context: context,
-    builder: (_) => StatefulBuilder(
-      builder: (context, setState) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: Text(
-          type == "review" ? "إرسال مراجعة" : "رفع ملف التسعير",
-          style: TextStyle(color: Colors.white),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            children: [
-              TextField(
-                controller: noteController,
-                maxLines: 3,
-                style: TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: "اكتب ملاحظة (اختياري)",
-                  hintStyle: TextStyle(color: Colors.white54),
-                  filled: true,
-                  fillColor: Colors.white12,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              SizedBox(height: 10.h),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  final picker = ImagePicker();
-                  final XFile? picked = await picker.pickImage(
-                    source: ImageSource.gallery,
-                  );
-                  if (picked != null) {
-                    setState(() => selectedImages.add(File(picked.path)));
-                  }
-                },
-                icon: Icon(Icons.image),
-                label: Text("إضافة صورة"),
-              ),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  final result = await FilePicker.platform.pickFiles(
-                    allowMultiple: true,
-                  );
-                  if (result != null) {
-                    setState(
-                      () => selectedFiles.addAll(
-                        result.paths.map((p) => File(p!)),
-                      ),
-                    );
-                  }
-                },
-                icon: Icon(Icons.attach_file),
-                label: Text("إضافة ملف"),
-              ),
-              SizedBox(height: 10.h),
-              Text(
-                "الصور: ${selectedImages.length} | الملفات: ${selectedFiles.length}",
-                style: TextStyle(color: Colors.white70),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("إلغاء", style: TextStyle(color: Colors.red)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              cubit.sendReviewOrPricing(
-                orderId: orderId,
-                type: type,
-                note: noteController.text.trim(),
-                files: selectedFiles,
-                images: selectedImages,
-              );
-              Navigator.pop(context);
-            },
-            child: Text("إرسال"),
-          ),
-        ],
-      ),
-    ),
-  );
-}

@@ -29,6 +29,8 @@ class PricingReviewCubit extends Cubit<PricingReviewState> {
             PricingReviewModel.fromMap(
               pricingMap,
               orderId: doc.id,
+            ).copyWith(
+              clientName: data['name'] ?? '',
             ),
           );
         }

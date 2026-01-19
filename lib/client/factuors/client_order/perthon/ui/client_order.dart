@@ -31,16 +31,16 @@ class _ClientOrderState extends State<ClientOrder> {
       orderCubit.listenToLastOrder(userId);
     });
   }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<OrderCubit, OrderState>(
       listener: (context, state) {
-
         if (state is OrderSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Order sent successfully!")),
           );
-        }else if (state is OrderError) {
+        } else if (state is OrderError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text("Error: ${state.message}"),
@@ -83,6 +83,22 @@ class _ClientOrderState extends State<ClientOrder> {
 
                   ClientSelectOrder(
                     OnAdd: (newOrder) async {
+                      final userId = FirebaseAuth.instance.currentUser!.uid;
+                      final name = await orderCubit.getUserNameIfEmpty(
+                        newOrder.name ?? '',
+                        userId,
+                      );
+
+                      if (name == null || name.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("الاسم مطلوب"),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
                       final orderModel = OrderModel(
                         name: newOrder.name,
                         numper: newOrder.numper.toInt(),

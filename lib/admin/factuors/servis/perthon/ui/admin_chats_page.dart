@@ -18,13 +18,21 @@ class AdminChatsPage extends StatelessWidget {
             .orderBy('updatedAt', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final chats = snapshot.data!.docs;
+          if (snapshot.hasError) {
+            return const Center(
+              child: Text(
+                'حدث خطأ أثناء تحميل المحادثات',
+                style: TextStyle(color: Colors.red),
+              ),
+            );
+          }
 
-          if (chats.isEmpty) {
+          /// 📭 Empty
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return Center(
               child: Text(
                 'لا يوجد محادثات',
@@ -37,26 +45,40 @@ class AdminChatsPage extends StatelessWidget {
             );
           }
 
+          final chats = snapshot.data!.docs;
+
           return ListView.builder(
             itemCount: chats.length,
             itemBuilder: (context, index) {
-              final data = chats[index].data() as Map<String, dynamic>;
+              final data =
+                  chats[index].data() as Map<String, dynamic>? ?? {};
+
+              final userName = data['userName'] ?? 'عميل';
+              final lastMessage = data['lastMessage'] ?? '';
+              final userId = data['userId'];
 
               return ListTile(
-                leading: const CircleAvatar(child: Icon(Icons.person)),
-                title: Text(data['userName'] ?? 'عميل',style: TextStyle(color: Colors.white),),
+                leading: const CircleAvatar(
+                  child: Icon(Icons.person),
+                ),
+                title: Text(
+                  userName.toString(),
+                  style: const TextStyle(color: Colors.white),
+                ),
                 subtitle: Text(
-                  data['lastMessage'] ?? '',style: TextStyle(color: Colors.white),
+                  lastMessage.toString(),
+                  style: const TextStyle(color: Colors.white70),
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,),
-                trailing: const Icon(Icons.chat),
-                onTap: () {
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onTap: userId == null
+                    ? null
+                    : () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => AdminChatPage(
-                        orderId: data['orderId'],
-                        userId: data['userId'],
+                        userId: userId.toString(),
                       ),
                     ),
                   );

@@ -5,15 +5,19 @@ import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:dio/dio.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
+import 'dart:async';
 
+import '../../../../../core/wedgit/Widgit_admin/add_client.dart';
 import '../../data/model/order_model.dart';
 import 'order_state.dart';
 
 class OrderCubit extends Cubit<OrderState> {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
-
   final CloudinaryPublic cloudinary =
   CloudinaryPublic('dytgdp642', 'alfardos', cache: false);
+
+  StreamSubscription? _ordersSubscription;
+  StreamSubscription? _lastOrderSubscription;
 
   OrderCubit() : super(OrderInitial());
 
@@ -55,14 +59,17 @@ class OrderCubit extends Cubit<OrderState> {
 
       emit(OrderSuccess());
     } catch (e) {
-      emit(OrderError(e.toString()));
+      emit(OrderError("حدث خطأ أثناء إنشاء الطلب: $e"));
     }
   }
-//يجيب اخر اوردر اتعمل
+
+  // --------------------------------------------------------------------------
+  // الاستماع لأحدث طلب
+  // --------------------------------------------------------------------------
   Future<void> listenToLastOrder(String userId) async {
     emit(OrderLoading());
 
-    FirebaseFirestore.instance
+    _lastOrderSubscription = firestore
         .collection('orders')
         .where('userId', isEqualTo: userId)
         .orderBy('createdAt', descending: true)
@@ -85,7 +92,7 @@ class OrderCubit extends Cubit<OrderState> {
   // متابعة طلبات العميل
   // --------------------------------------------------------------------------
   void listenToOrders(String userId) {
-    firestore
+    _ordersSubscription = firestore
         .collection("orders")
         .where("userId", isEqualTo: userId)
         .orderBy("createdAt", descending: true)
@@ -97,6 +104,23 @@ class OrderCubit extends Cubit<OrderState> {
 
       emit(GetOrdersSuccess(orders));
     });
+  }
+
+  // --------------------------------------------------------------------------
+  // تحميل الاسم تلقائي
+  // --------------------------------------------------------------------------
+  Future<String?> getUserNameIfEmpty(String currentName, String userId) async {
+    if (currentName.trim().isNotEmpty) {
+      return currentName;
+    }
+
+    final userDoc = await firestore.collection('users').doc(userId).get();
+
+    if (userDoc.exists) {
+      return userDoc.data()?['name'];
+    }
+
+    return null;
   }
 
   // --------------------------------------------------------------------------
@@ -122,20 +146,32 @@ class OrderCubit extends Cubit<OrderState> {
       );
 
       emit(FileDownloadSuccess(savePath, url));
-
-      OpenFile.open(savePath);
+      await OpenFile.open(savePath);
     } catch (e) {
-      emit(FileDownloadError("حدث خطأ أثناء تحميل الملف", url));
+      emit(FileDownloadError("حدث خطأ أثناء تحميل الملف: $e", url));
     }
   }
 
+  // --------------------------------------------------------------------------
+  // حذف الطلب
+  // --------------------------------------------------------------------------
   Future<void> deleteOrder(String orderId) async {
     try {
       emit(OrderLoading());
       await firestore.collection("orders").doc(orderId).delete();
       emit(OrderSuccess());
     } catch (e) {
-      emit(OrderError(e.toString()));
+      emit(OrderError("حدث خطأ أثناء حذف الطلب: $e"));
     }
+  }
+
+  // --------------------------------------------------------------------------
+  // تنظيف Subscriptions عند غلق الكيوبت
+  // --------------------------------------------------------------------------
+  @override
+  Future<void> close() {
+    _ordersSubscription?.cancel();
+    _lastOrderSubscription?.cancel();
+    return super.close();
   }
 }

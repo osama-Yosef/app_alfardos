@@ -1,6 +1,3 @@
-
-
-
 import 'package:app_alfardos/client/factuors/home_screen/perthon/ui/client_home_screen.dart';
 import 'package:app_alfardos/core/routing/routes.dart';
 import 'package:flutter/cupertino.dart';
@@ -21,6 +18,7 @@ import '../../client/factuors/client_show_order/perthon/ui/client_show_order.dar
 import '../../client/factuors/customer_service/perthon/ui/customer_service.dart';
 import '../wedgit/Widgit_admin/select_matrial.dart';
 import '../wedgit/wedgit_app/verify_email_screen.dart';
+import '../wedgit/widget_client/clint_chat.dart';
 
 class AppRouter {
   static Route? navigator(RouteSettings setting) {
@@ -34,14 +32,16 @@ class AppRouter {
       case Routes.customerRequests:
         return MaterialPageRoute(builder: (context) => CustomerRequests());
       case Routes.liveProductionFollowUp:
-        return MaterialPageRoute(builder: (context) => LiveProductionFollowUp());
+        return MaterialPageRoute(
+          builder: (context) => LiveProductionFollowUp(),
+        );
       case Routes.Setting:
         return MaterialPageRoute(builder: (context) => Setting());
       case Routes.SplashScreen:
         return MaterialPageRoute(builder: (context) => SplashScreen());
       case Routes.SelectMatrial:
         return MaterialPageRoute(
-          builder: (context) => SelectMatrial(onAdd: (MaterialItem) {}),
+          builder: (context) => SelectMaterialDialog(),
         );
       case Routes.ClientHomeScreen:
         return MaterialPageRoute(builder: (context) => ClientHomeScreen());
@@ -56,18 +56,11 @@ class AppRouter {
       case Routes.EngScreen:
         return MaterialPageRoute(builder: (context) => EngScreen());
       case Routes.AdminChatsPage:
-        return MaterialPageRoute(builder: (context) => FactorPage());
-      case Routes.Factor:
         return MaterialPageRoute(builder: (context) => AdminChatsPage());
+      case Routes.Factor:
+        return MaterialPageRoute(builder: (context) => Factor());
       default:
         return MaterialPageRoute(builder: (context) => SizedBox());
     }
   }
 }
-
-
-
-
-
-
-
