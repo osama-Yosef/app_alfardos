@@ -26,6 +26,49 @@ class _SelectOrder extends State<SelectOrder> {
   String? selectedMaterial;
 
   @override
+  void dispose() {
+    nameController.dispose();
+    numberController.dispose();
+    tokenController.dispose();
+    theRestController.dispose();
+    productController.dispose();
+    amountController.dispose();
+    sizeController.dispose();
+    commentController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (nameController.text.isEmpty ||
+        numberController.text.isEmpty ||
+        productController.text.isEmpty ||
+        amountController.text.isEmpty ||
+        selectedMaterial == null ||
+        selectedPriority == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("من فضلك اكمل البيانات المطلوبة")),
+      );
+      return;
+    }
+
+    final newOrderItem = OrderItem(
+      name: nameController.text.trim(),
+      number: double.tryParse(numberController.text) ?? 0,
+      token: double.tryParse(tokenController.text) ?? 0,
+      theRest: double.tryParse(theRestController.text) ?? 0,
+      product: productController.text.trim(),
+      material: selectedMaterial!,
+      priority: selectedPriority!,
+      amount: double.tryParse(amountController.text) ?? 0,
+      size: double.tryParse(sizeController.text) ?? 0,
+      comment: commentController.text.trim(),
+    );
+
+    widget.OnAdd(newOrderItem);
+    Navigator.pop(context); // ✅ الصح
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Dialog(
       insetPadding: const EdgeInsets.all(16),
@@ -191,22 +234,7 @@ class _SelectOrder extends State<SelectOrder> {
                       borderRadius: BorderRadius.circular(8.r),
                     ),
                   ),
-                  onPressed: () {
-                    final newOrderItem = OrderItem(
-                      name: nameController.text,
-                      number: double.tryParse(numberController.text) ?? 0 ,
-                      token: double.tryParse(tokenController.text) ?? 0,
-                      theRest: double.tryParse(theRestController.text) ?? 0,
-                      product: productController.text,
-                      material: selectedMaterial ?? '',
-                      priority: selectedPriority ?? '',
-                      amount: double.tryParse(amountController.text) ?? 0,
-                      size:double.tryParse(sizeController.text) ?? 0 ,
-                      comment: commentController.text,
-                    );
-                    widget.OnAdd(newOrderItem);
-                    Navigator.pop;
-                    },
+                  onPressed: _submit,
                   child: Text(
                     'إضافة الطلب',
                     style: TextStyle(fontSize: 16.sp, color: Colors.white),
