@@ -108,5 +108,4 @@ class OrderModel {
     final order = OrderModel.fromMap(data, docId);
     return order;
   }
-
 }

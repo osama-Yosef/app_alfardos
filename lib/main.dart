@@ -22,56 +22,68 @@ import 'client/factuors/client_order/perthon/cubit/order_cubit.dart';
 import 'client/factuors/home_screen/perthon/cuibt/client_balance_cubit.dart';
 import 'firebase_options.dart';
 
+/// 🔹 Mobile only
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 }
 
 Future<void> main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+
   FlutterError.onError = (details) {
     debugPrint(details.exceptionAsString());
   };
+
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  try {
-    if (!Platform.isWindows) {
-      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-    }
-  } catch (e) {
-    debugPrint("FCM background handler error: $e");
-  }
-
-  await FirebaseMessaging.instance.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
   );
 
   if (!Platform.isWindows) {
+    FirebaseMessaging.onBackgroundMessage(
+      firebaseMessagingBackgroundHandler,
+    );
+
+    await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
     await FirebaseAppCheck.instance.activate(
       androidProvider: AndroidProvider.playIntegrity,
       appleProvider: AppleProvider.appAttest,
     );
   } else {
-    debugPrint("Firebase App Check disabled on Windows");
+    debugPrint('Windows detected → FCM & AppCheck disabled');
   }
 
-  final materialRepository = MaterialRepository(FirebaseFirestore.instance);
+  final materialRepository =
+  MaterialRepository(FirebaseFirestore.instance);
 
   runApp(
     MultiBlocProvider(
       providers: [
         /// AUTH
-        BlocProvider<AuthCubit>(create: (_) => AuthCubit(AuthRepoImpl())),
+        BlocProvider<AuthCubit>(
+          create: (_) => AuthCubit(AuthRepoImpl()),
+        ),
 
         /// CLIENT
-        BlocProvider<OrderCubit>(create: (_) => OrderCubit()),
-        BlocProvider<ClientBalanceCubit>(create: (_) => ClientBalanceCubit()),
+        BlocProvider<OrderCubit>(
+          create: (_) => OrderCubit(),
+        ),
+        BlocProvider<ClientBalanceCubit>(
+          create: (_) => ClientBalanceCubit(),
+        ),
 
         /// ENGINEER
-        BlocProvider<EngOrderCubit>(create: (_) => EngOrderCubit()),
+        BlocProvider<EngOrderCubit>(
+          create: (_) => EngOrderCubit(),
+        ),
 
         /// ADMIN - SETTING
         BlocProvider<SettingCubit>(
