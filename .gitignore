@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# منع رفع الملفات الكبيرة
+*.exe
+*.msi
+*.zip
+*.rar
+*.7z
