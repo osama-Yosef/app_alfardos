@@ -50,3 +50,19 @@ app.*.map.json
 *.zip
 *.rar
 *.7z
+
+# Flutter build artifacts
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.idea/
+.vscode/
+*.apk
+*.aab
+*.so
+*.pdb
+*.lib
+*.zip
