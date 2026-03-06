@@ -75,137 +75,135 @@ class _SettingState extends State<Setting> with SingleTickerProviderStateMixin {
 
             return Scrollbar(
               thumbVisibility: isDesktop,
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: isDesktop ? 1100.w : double.infinity,
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.all(isDesktop ? 24.w : 15.w),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: IconButton(
-                              icon: Icon(
-                                showPricingReviewButton
-                                    ? Icons.keyboard_arrow_up
-                                    : Icons.keyboard_arrow_down,
-                                color: Colors.white,
-                                size: 34,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  showPricingReviewButton =
-                                      !showPricingReviewButton;
-
-                                  showPricingReviewButton
-                                      ? _controller.forward()
-                                      : _controller.reverse();
-                                });
-                              },
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: isDesktop ? 1100.w : double.infinity,
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(isDesktop ? 24.w : 15.w),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: IconButton(
+                            icon: Icon(
+                              showPricingReviewButton
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
+                              color: Colors.white,
+                              size: 34,
                             ),
-                          ),
+                            onPressed: () {
+                              setState(() {
+                                showPricingReviewButton =
+                                    !showPricingReviewButton;
 
-                          SlideTransition(
-                            position: _slideAnimation,
-                            child: showPricingReviewButton
-                                ? Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      vertical: 12.h,
-                                    ),
-                                    child: const PricingReviewButton(),
-                                  )
-                                : const SizedBox(),
-                          ),
-
-                          Row(
-                            spacing: 5.w,
-                            children: [
-                              Expanded(
-                                child: _weightCalculatorButton(
-                                  context,
-                                  isDesktop,
-                                ),
-                              ),
-                              Expanded(
-                                child: Container(
-                                  width: 80.w,
-                                  height: 55.h,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white30,
-                                    border: Border.all(
-                                      width: 1.w,
-                                      color: Colors.white,
-                                    ),
-                                    borderRadius: BorderRadius.circular(7.r),
-                                  ),
-                                  child: InkWell(
-                                    onTap: () {
-                                      Navigator.pushNamed(
-                                        context,
-                                        Routes.AdminChatsPage,
-                                      );
-                                    },
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      spacing: 5.w,
-                                      children: [
-                                        Flexible(
-                                          child: Text(
-                                            "صفحه المهندسين",
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: isDesktop ? 20.w : 24.w,
-                                              color: Colors.white,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                        Icon(
-                                          Icons.engineering,
-                                          size: 20.sp,
-                                          color: Colors.blueAccent,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          SizedBox(height: 20.h),
-                          BlocBuilder<SettingCubit, SettingState>(
-                            builder: (context, state) {
-                              if (state is SettingLoaded) {
-                                if (state.orders.isEmpty) {
-                                  return const Text("لا توجد طلبات");
-                                }
-
-                                return ListView.separated(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: state.orders.length,
-                                  separatorBuilder: (_, __) =>
-                                      SizedBox(height: isDesktop ? 20 : 15.h),
-                                  itemBuilder: (context, i) => _orderCard(
-                                    context,
-                                    state.orders[i],
-                                    isDesktop,
-                                  ),
-                                );
-                              }
-
-                              return const SizedBox();
+                                showPricingReviewButton
+                                    ? _controller.forward()
+                                    : _controller.reverse();
+                              });
                             },
                           ),
-                        ],
-                      ),
+                        ),
+
+                        SlideTransition(
+                          position: _slideAnimation,
+                          child: showPricingReviewButton
+                              ? Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: 12.h,
+                                  ),
+                                  child: const PricingReviewButton(),
+                                )
+                              : const SizedBox(),
+                        ),
+
+                        Row(
+                          spacing: 5.w,
+                          children: [
+                            Expanded(
+                              child: _weightCalculatorButton(
+                                context,
+                                isDesktop,
+                              ),
+                            ),
+                            Expanded(
+                              child: Container(
+                                width: 80.w,
+                                height: 55.h,
+                                decoration: BoxDecoration(
+                                  color: Colors.white30,
+                                  border: Border.all(
+                                    width: 1.w,
+                                    color: Colors.white,
+                                  ),
+                                  borderRadius: BorderRadius.circular(7.r),
+                                ),
+                                child: InkWell(
+                                  onTap: () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      Routes.AdminChatsPage,
+                                    );
+                                  },
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.center,
+                                    spacing: 5.w,
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          "صفحه المهندسين",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: isDesktop ? 20.w : 24.w,
+                                            color: Colors.white,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.engineering,
+                                        size: 20.sp,
+                                        color: Colors.blueAccent,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        SizedBox(height: 20.h),
+                        BlocBuilder<SettingCubit, SettingState>(
+                          builder: (context, state) {
+                            if (state is SettingLoaded) {
+                              if (state.orders.isEmpty) {
+                                return const Text("لا توجد طلبات");
+                              }
+
+                              return ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: state.orders.length,
+                                separatorBuilder: (_, __) =>
+                                    SizedBox(height: isDesktop ? 20 : 15.h),
+                                itemBuilder: (context, i) => _orderCard(
+                                  context,
+                                  state.orders[i],
+                                  isDesktop,
+                                ),
+                              );
+                            }
+
+                            return const SizedBox();
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ),

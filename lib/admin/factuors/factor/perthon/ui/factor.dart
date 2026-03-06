@@ -95,7 +95,7 @@ class _FactorState extends State<Factor> {
         backgroundColor: MyColorsApp.AppBarColor,
         automaticallyImplyLeading: false,
         leading: IconButton(
-          icon: const Icon(Icons.logout, color: Colors.white, size: 30),
+          icon: const Icon(Icons.logout, color: Colors.white, size: 25),
           onPressed: () => _logout(context),
         ),
         actions: [
@@ -118,11 +118,11 @@ class _FactorState extends State<Factor> {
                         color: MyColorsApp.iconColor,
                         borderRadius: BorderRadius.circular(12.r),
                       ),
-                      padding: EdgeInsets.all(isWideScreen ? 12.r : 8.r),
+                      padding: EdgeInsets.all(isWideScreen ? 10.r : 8.r),
                       child: Icon(
                         Icons.factory,
                         color: Colors.white,
-                        size: isWideScreen ? 36.sp : 28.sp,
+                        size: isWideScreen ? 20.sp : 20.sp,
                       ),
                     ),
                     SizedBox(width: 12.w),
@@ -130,7 +130,7 @@ class _FactorState extends State<Factor> {
                       "مصنع الفردوس لتشغيل المعادن",
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: isWideScreen ? 28.sp : 22.sp,
+                        fontSize: isWideScreen ? 20.sp : 28.sp,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
