@@ -20,6 +20,18 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Install CocoaPods
+        run: sudo gem install cocoapods
+
+      - name: Install iOS pods
+        run: |
+          cd ios
+          pod install
+          cd ..
+
+      - name: Clean Flutter
+        run: flutter clean
+
       - name: Build iOS IPA
         run: flutter build ipa --release --no-codesign
 
