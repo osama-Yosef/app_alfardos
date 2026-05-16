@@ -44,7 +44,7 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-
+windows/firebase_cpp_sdk_windows/
 
 # Flutter/Windows build artifacts
 build/
