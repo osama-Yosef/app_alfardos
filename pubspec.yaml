@@ -11,6 +11,8 @@ dependencies:
   flutter:
     sdk: flutter
 
+  flutter_localizations:
+    sdk: flutter
   # ── UI & Icons ─────────────────────────────────────────────
   cupertino_icons: ^1.0.8
   font_awesome_flutter: ^10.9.1       # مستخدم في customer_service.dart
@@ -53,14 +55,7 @@ dependencies:
   url_launcher: ^6.3.2
   intl: ^0.20.2
 
-  # ── REMOVED PACKAGES (سبب الحذف) ──────────────────────────
-  # responsive_framework  ← محذوف: لا يُستخدم في أي ملف dart
-  # responsive_builder    ← محذوف: لا يُستخدم في أي ملف dart
-  # responsive_wrapper    ← محذوف: لا يُستخدم في أي ملف dart
-  # http                  ← محذوف: dio يغطي نفس الوظيفة (http غير مستخدم)
-  # easy_localization     ← محذوف: التطبيق يستخدم flutter_localizations مباشرةً
-  # uuid                  ← محذوف: لا يُستخدم في أي ملف dart
-  # appcheck              ← محذوف: firebase_app_check يغني عنه تماماً
+
 
 dev_dependencies:
   flutter_test:
