@@ -23,20 +23,26 @@ jobs:
       - name: Copy Podfile to ios folder
         run: cp .github/Podfile ios/Podfile
 
-      - name: Verify Podfile
-        run: head -3 ios/Podfile
-
       - name: Install CocoaPods
         run: sudo gem install cocoapods
 
       - name: Pod install
         run: cd ios && pod install --repo-update
 
-      - name: Build iOS IPA (no codesign)
-        run: flutter build ipa --release --no-codesign
+      - name: Build iOS archive (no codesign)
+        run: flutter build ios --release --no-codesign
+
+      - name: Create IPA manually
+        run: |
+          mkdir -p build/ios/ipa/Payload
+          cp -r build/ios/Release-iphoneos/Runner.app build/ios/ipa/Payload/
+          cd build/ios/ipa
+          zip -r app_alfardos.ipa Payload/
+          echo "IPA created successfully"
+          ls -lh *.ipa
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
           name: ios-app
-          path: build/ios/ipa/*.ipa
+          path: build/ios/ipa/app_alfardos.ipa
